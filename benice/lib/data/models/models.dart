@@ -3,14 +3,19 @@ import '../../core/constants/app_constants.dart';
 import '../../domain/entities/entities.dart';
 
 /// Modelo de Usuario para la capa de datos
+/// DB table: users (id, email, full_name, phone, address, role, created_at)
 class UserModel extends UserEntity {
   const UserModel({
     required super.id,
     required super.email,
     super.name,
+    super.fullName,
     super.phone,
     super.address,
+    super.city,
+    super.postalCode,
     super.avatarUrl,
+    super.role,
     super.isSubscribedNewsletter,
     required super.createdAt,
   });
@@ -19,13 +24,14 @@ class UserModel extends UserEntity {
     return UserModel(
       id: json['id'] as String,
       email: json['email'] as String,
-      name: json['name'] as String?,
+      name: json['full_name'] as String?,
+      fullName: json['full_name'] as String?,
       phone: json['phone'] as String?,
       address: json['address'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
-      isSubscribedNewsletter:
-          json['is_subscribed_newsletter'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      role: json['role'] as String? ?? 'user',
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
     );
   }
 
@@ -33,12 +39,10 @@ class UserModel extends UserEntity {
     return {
       'id': id,
       'email': email,
-      'name': name,
+      'full_name': fullName ?? name,
       'phone': phone,
       'address': address,
-      'avatar_url': avatarUrl,
-      'is_subscribed_newsletter': isSubscribedNewsletter,
-      'created_at': createdAt.toIso8601String(),
+      'role': role,
     };
   }
 
@@ -47,9 +51,13 @@ class UserModel extends UserEntity {
       id: entity.id,
       email: entity.email,
       name: entity.name,
+      fullName: entity.fullName,
       phone: entity.phone,
       address: entity.address,
+      city: entity.city,
+      postalCode: entity.postalCode,
       avatarUrl: entity.avatarUrl,
+      role: entity.role,
       isSubscribedNewsletter: entity.isSubscribedNewsletter,
       createdAt: entity.createdAt,
     );
@@ -57,13 +65,18 @@ class UserModel extends UserEntity {
 }
 
 /// Modelo de Producto para la capa de datos
+/// DB table: products (id, name, slug, description, price, sale_price, on_sale,
+///   stock, image_url, images, brand, animal_type, size, category, age_range, created_at)
 class ProductModel extends ProductEntity {
   const ProductModel({
     required super.id,
     required super.name,
+    super.slug,
     required super.description,
     required super.price,
     super.discountPrice,
+    super.onSale,
+    super.imageUrl,
     required super.images,
     required super.animalType,
     required super.animalSize,
@@ -78,58 +91,105 @@ class ProductModel extends ProductEntity {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    // DB column 'images' is text[] (PostgreSQL array)
+    List<String> imagesList;
+    if (json['images'] is List) {
+      imagesList = List<String>.from(json['images'] as List);
+    } else if (json['images'] is String) {
+      // Handle PostgreSQL text[] serialized as string: {url1,url2}
+      final raw = json['images'] as String;
+      if (raw.startsWith('{') && raw.endsWith('}')) {
+        imagesList = raw
+            .substring(1, raw.length - 1)
+            .split(',')
+            .where((s) => s.isNotEmpty)
+            .toList();
+      } else {
+        imagesList = [];
+      }
+    } else {
+      imagesList = [];
+    }
+
+    // DB: animal_type enum values: 'perro', 'gato', 'otros'
+    final animalTypeStr = json['animal_type'] as String? ?? 'perro';
+    final animalType = AnimalType.values.firstWhere(
+      (e) =>
+          e.name == animalTypeStr ||
+          e.name == animalTypeStr.replaceAll('s', ''),
+      orElse: () => AnimalType.perro,
+    );
+
+    // DB: size enum: 'mini', 'mediano', 'grande'
+    final sizeStr =
+        json['size'] as String? ?? json['animal_size'] as String? ?? 'mediano';
+    final animalSize = AnimalSize.values.firstWhere(
+      (e) => e.name == sizeStr,
+      orElse: () => AnimalSize.mediano,
+    );
+
+    // DB: category enum: 'alimentacion', 'higiene', 'salud', 'accesorios', 'juguetes'
+    final categoryStr = json['category'] as String? ?? 'alimentacion';
+    final category = ProductCategory.values.firstWhere(
+      (e) => e.name == categoryStr,
+      orElse: () => ProductCategory.alimentacion,
+    );
+
+    // DB: age_range enum: 'cachorro', 'adulto', 'senior'
+    final ageStr =
+        json['age_range'] as String? ??
+        json['animal_age'] as String? ??
+        'adulto';
+    final animalAge = AnimalAge.values.firstWhere(
+      (e) => e.name == ageStr,
+      orElse: () => AnimalAge.adulto,
+    );
+
+    final onSale = json['on_sale'] as bool? ?? false;
+
     return ProductModel(
       id: json['id'] as String,
       name: json['name'] as String,
-      description: json['description'] as String,
+      slug: json['slug'] as String?,
+      description: json['description'] as String? ?? '',
       price: (json['price'] as num).toDouble(),
-      discountPrice: json['discount_price'] != null
-          ? (json['discount_price'] as num).toDouble()
+      discountPrice: json['sale_price'] != null
+          ? (json['sale_price'] as num).toDouble()
           : null,
-      images: List<String>.from(json['images'] as List? ?? []),
-      animalType: AnimalType.values.firstWhere(
-        (e) => e.name == json['animal_type'],
-        orElse: () => AnimalType.perro,
-      ),
-      animalSize: AnimalSize.values.firstWhere(
-        (e) => e.name == json['animal_size'],
-        orElse: () => AnimalSize.mediano,
-      ),
-      category: ProductCategory.values.firstWhere(
-        (e) => e.name == json['category'],
-        orElse: () => ProductCategory.alimentacion,
-      ),
-      animalAge: AnimalAge.values.firstWhere(
-        (e) => e.name == json['animal_age'],
-        orElse: () => AnimalAge.adulto,
-      ),
+      onSale: onSale,
+      imageUrl: json['image_url'] as String?,
+      images: imagesList,
+      animalType: animalType,
+      animalSize: animalSize,
+      category: category,
+      animalAge: animalAge,
       stock: json['stock'] as int? ?? 0,
       brand: json['brand'] as String?,
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       reviewsCount: json['reviews_count'] as int? ?? 0,
-      isFeatured: json['is_featured'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      isFeatured: onSale, // Use on_sale as featured since DB has no is_featured
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'name': name,
+      'slug': slug,
       'description': description,
       'price': price,
-      'discount_price': discountPrice,
+      'sale_price': discountPrice,
+      'on_sale': onSale,
+      'image_url': imageUrl ?? mainImage,
       'images': images,
+      'brand': brand ?? 'Venice',
       'animal_type': animalType.name,
-      'animal_size': animalSize.name,
+      'size': animalSize.name,
       'category': category.name,
-      'animal_age': animalAge.name,
+      'age_range': animalAge.name,
       'stock': stock,
-      'brand': brand,
-      'rating': rating,
-      'reviews_count': reviewsCount,
-      'is_featured': isFeatured,
-      'created_at': createdAt.toIso8601String(),
     };
   }
 }
@@ -207,6 +267,9 @@ class CartModel extends CartEntity {
 }
 
 /// Modelo de Pedido
+/// DB table: orders (id, user_id, total, status, promo_code, discount_amount,
+///   shipping_address, shipping_name, shipping_phone, stripe_session_id,
+///   tracking_number, created_at, updated_at)
 class OrderModel extends OrderEntity {
   const OrderModel({
     required super.id,
@@ -220,83 +283,88 @@ class OrderModel extends OrderEntity {
     super.discountCode,
     required super.status,
     required super.shippingAddress,
+    super.shippingName,
+    super.shippingPhone,
+    super.stripeSessionId,
     super.trackingNumber,
     super.notes,
     required super.createdAt,
     super.updatedAt,
-    super.paidAt,
-    super.shippedAt,
-    super.deliveredAt,
-    super.cancelledAt,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
+    // Items may come from join or separate
+    List<OrderItemEntity> items = [];
+    if (json['items'] is List) {
+      items = (json['items'] as List)
+          .map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else if (json['order_items'] is List) {
+      items = (json['order_items'] as List)
+          .map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    final total = (json['total'] as num).toDouble();
+    final discountAmount = (json['discount_amount'] as num?)?.toDouble() ?? 0;
+
+    // Compute subtotal from items if available, else from total + discount
+    double subtotal;
+    if (items.isNotEmpty) {
+      subtotal = items.fold(0.0, (sum, item) => sum + item.totalPrice);
+    } else {
+      subtotal = total + discountAmount;
+    }
+
     return OrderModel(
       id: json['id'] as String,
       orderNumber:
           json['order_number'] as String? ??
           'ORD-${json['id'].toString().substring(0, 8).toUpperCase()}',
       userId: json['user_id'] as String,
-      items: (json['items'] as List)
-          .map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      subtotal: (json['subtotal'] as num).toDouble(),
-      discount: (json['discount'] as num?)?.toDouble() ?? 0,
-      shippingCost: (json['shipping_cost'] as num).toDouble(),
-      total: (json['total'] as num).toDouble(),
-      discountCode: json['discount_code'] as String?,
+      items: items,
+      subtotal: subtotal,
+      discount: discountAmount,
+      shippingCost: (json['shipping_cost'] as num?)?.toDouble() ?? 0,
+      total: total,
+      discountCode: json['promo_code'] as String?,
       status: OrderStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => OrderStatus.pendiente,
       ),
-      shippingAddress: json['shipping_address'] as String,
+      shippingAddress: json['shipping_address'] as String? ?? '',
+      shippingName: json['shipping_name'] as String?,
+      shippingPhone: json['shipping_phone'] as String?,
+      stripeSessionId: json['stripe_session_id'] as String?,
       trackingNumber: json['tracking_number'] as String?,
       notes: json['notes'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
-          : null,
-      paidAt: json['paid_at'] != null
-          ? DateTime.parse(json['paid_at'] as String)
-          : null,
-      shippedAt: json['shipped_at'] != null
-          ? DateTime.parse(json['shipped_at'] as String)
-          : null,
-      deliveredAt: json['delivered_at'] != null
-          ? DateTime.parse(json['delivered_at'] as String)
-          : null,
-      cancelledAt: json['cancelled_at'] != null
-          ? DateTime.parse(json['cancelled_at'] as String)
           : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'order_number': orderNumber,
       'user_id': userId,
-      'items': items.map((e) => (e as OrderItemModel).toJson()).toList(),
-      'subtotal': subtotal,
-      'discount': discount,
-      'shipping_cost': shippingCost,
       'total': total,
-      'discount_code': discountCode,
       'status': status.name,
+      'promo_code': discountCode,
+      'discount_amount': discount,
       'shipping_address': shippingAddress,
+      'shipping_name': shippingName,
+      'shipping_phone': shippingPhone,
+      'stripe_session_id': stripeSessionId,
       'tracking_number': trackingNumber,
-      'notes': notes,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
-      'paid_at': paidAt?.toIso8601String(),
-      'shipped_at': shippedAt?.toIso8601String(),
-      'delivered_at': deliveredAt?.toIso8601String(),
-      'cancelled_at': cancelledAt?.toIso8601String(),
     };
   }
 }
 
 /// Modelo de Item de Pedido
+/// DB table: order_items (id, order_id, product_id, quantity, price)
 class OrderItemModel extends OrderItemEntity {
   const OrderItemModel({
     required super.id,
@@ -308,25 +376,29 @@ class OrderItemModel extends OrderItemEntity {
   });
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
+    // Handle joined product data if available
+    String productName = json['product_name'] as String? ?? '';
+    String productImage = json['product_image'] as String? ?? '';
+
+    // If we have a nested product object from join
+    if (json['products'] is Map) {
+      final product = json['products'] as Map<String, dynamic>;
+      productName = product['name'] as String? ?? productName;
+      productImage = product['image_url'] as String? ?? productImage;
+    }
+
     return OrderItemModel(
-      id: json['id'] as String,
-      productId: json['product_id'] as String,
-      productName: json['product_name'] as String,
-      productImage: json['product_image'] as String,
+      id: json['id']?.toString() ?? '',
+      productId: json['product_id']?.toString() ?? '',
+      productName: productName,
+      productImage: productImage,
       price: (json['price'] as num).toDouble(),
       quantity: json['quantity'] as int,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'product_id': productId,
-      'product_name': productName,
-      'product_image': productImage,
-      'price': price,
-      'quantity': quantity,
-    };
+    return {'product_id': productId, 'price': price, 'quantity': quantity};
   }
 
   factory OrderItemModel.fromCartItem(CartItemEntity cartItem) {
@@ -342,26 +414,192 @@ class OrderItemModel extends OrderItemEntity {
 }
 
 /// Modelo de Código de Descuento
+/// DB table: promo_codes (id, code, discount_percentage, active, max_uses,
+///   current_uses, expires_at, created_at)
 class DiscountCodeModel extends DiscountCodeEntity {
   const DiscountCodeModel({
+    super.id,
     required super.code,
     required super.discountPercent,
     super.isActive,
+    super.maxUses,
+    super.currentUses,
     super.expiresAt,
-    super.minPurchase,
+    super.createdAt,
   });
 
   factory DiscountCodeModel.fromJson(Map<String, dynamic> json) {
     return DiscountCodeModel(
+      id: json['id'] as String?,
       code: json['code'] as String,
-      discountPercent: (json['discount_percent'] as num).toDouble(),
-      isActive: json['is_active'] as bool? ?? true,
+      discountPercent: (json['discount_percentage'] as num).toDouble(),
+      isActive: json['active'] as bool? ?? true,
+      maxUses: json['max_uses'] as int?,
+      currentUses: json['current_uses'] as int? ?? 0,
       expiresAt: json['expires_at'] != null
           ? DateTime.parse(json['expires_at'] as String)
           : null,
-      minPurchase: json['min_purchase'] != null
-          ? (json['min_purchase'] as num).toDouble()
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
           : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'code': code,
+      'discount_percentage': discountPercent.round(),
+      'active': isActive,
+      'max_uses': maxUses,
+      'expires_at': expiresAt?.toIso8601String(),
+    };
+  }
+}
+
+/// Modelo de Reseña
+/// DB table: product_reviews
+class ReviewModel extends ReviewEntity {
+  const ReviewModel({
+    required super.id,
+    required super.productId,
+    required super.userId,
+    required super.userName,
+    required super.rating,
+    super.comment,
+    super.verifiedPurchase,
+    super.helpfulCount,
+    required super.createdAt,
+  });
+
+  factory ReviewModel.fromJson(Map<String, dynamic> json) {
+    return ReviewModel(
+      id: json['id'] as String,
+      productId: json['product_id'] as String,
+      userId: json['user_id'] as String,
+      userName: json['user_name'] as String? ?? 'Anónimo',
+      rating: json['rating'] as int,
+      comment: json['comment'] as String?,
+      verifiedPurchase: json['verified_purchase'] as bool? ?? false,
+      helpfulCount: json['helpful_count'] as int? ?? 0,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product_id': productId,
+      'user_id': userId,
+      'user_name': userName,
+      'rating': rating,
+      'comment': comment,
+      'verified_purchase': verifiedPurchase,
+    };
+  }
+}
+
+/// Modelo de Factura
+/// DB table: invoices (id, order_id, user_id, invoice_number, invoice_type,
+///   subtotal, tax_amount, total, pdf_url, created_at)
+class InvoiceModel extends InvoiceEntity {
+  const InvoiceModel({
+    required super.id,
+    required super.orderId,
+    required super.userId,
+    required super.invoiceNumber,
+    required super.invoiceType,
+    required super.subtotal,
+    required super.taxAmount,
+    required super.total,
+    super.pdfUrl,
+    required super.createdAt,
+  });
+
+  factory InvoiceModel.fromJson(Map<String, dynamic> json) {
+    return InvoiceModel(
+      id: json['id'] as String,
+      orderId: json['order_id'] as String,
+      userId: json['user_id'] as String,
+      invoiceNumber: json['invoice_number'] as String,
+      invoiceType: json['invoice_type'] as String? ?? 'factura',
+      subtotal: (json['subtotal'] as num).toDouble(),
+      taxAmount: (json['tax_amount'] as num?)?.toDouble() ?? 0,
+      total: (json['total'] as num).toDouble(),
+      pdfUrl: json['pdf_url'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+    );
+  }
+}
+
+/// Modelo de Devolución
+/// DB table: returns (id, order_id, user_id, reason, status, refund_amount,
+///   admin_notes, created_at, updated_at)
+class ReturnModel extends ReturnEntity {
+  const ReturnModel({
+    required super.id,
+    required super.orderId,
+    required super.userId,
+    required super.reason,
+    super.status,
+    super.refundAmount,
+    super.adminNotes,
+    required super.createdAt,
+    super.updatedAt,
+  });
+
+  factory ReturnModel.fromJson(Map<String, dynamic> json) {
+    return ReturnModel(
+      id: json['id'] as String,
+      orderId: json['order_id'] as String,
+      userId: json['user_id'] as String,
+      reason: json['reason'] as String,
+      status: json['status'] as String? ?? 'solicitada',
+      refundAmount: json['refund_amount'] != null
+          ? (json['refund_amount'] as num).toDouble()
+          : null,
+      adminNotes: json['admin_notes'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'order_id': orderId,
+      'user_id': userId,
+      'reason': reason,
+      'status': status,
+      'refund_amount': refundAmount,
+      'admin_notes': adminNotes,
+    };
+  }
+}
+
+/// Modelo de Suscriptor Newsletter
+/// DB table: newsletters (id, email, promo_code, source, created_at)
+class NewsletterSubscriberModel extends NewsletterSubscriber {
+  const NewsletterSubscriberModel({
+    required super.id,
+    required super.email,
+    required super.promoCode,
+    super.source,
+    required super.createdAt,
+  });
+
+  factory NewsletterSubscriberModel.fromJson(Map<String, dynamic> json) {
+    return NewsletterSubscriberModel(
+      id: json['id'] as String,
+      email: json['email'] as String,
+      promoCode: json['promo_code'] as String? ?? '',
+      source: json['source'] as String? ?? 'footer',
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
     );
   }
 }

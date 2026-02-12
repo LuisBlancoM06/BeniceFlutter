@@ -15,8 +15,16 @@ class CartScreen extends ConsumerWidget {
     final cart = cartState.cart;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: const Text('Mi Carrito'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Mi Carrito',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        iconTheme: const IconThemeData(color: AppTheme.textPrimary),
         actions: [
           if (cart.items.isNotEmpty)
             TextButton.icon(

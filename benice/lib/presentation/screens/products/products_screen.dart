@@ -43,39 +43,54 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   Widget build(BuildContext context) {
     final productsState = ref.watch(productsProvider);
     final filters = ref.watch(productFiltersProvider);
-    final cartItemCount = ref.watch(cartItemCountProvider);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: const Text('Productos'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        title: Row(
+          children: [
+            Icon(Icons.pets, color: AppTheme.primaryColor, size: 22),
+            const SizedBox(width: 8),
+            const Text(
+              'Tienda',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search, color: AppTheme.textSecondary),
             onPressed: () => _openSearch(),
-          ),
-          CountBadge(
-            count: cartItemCount,
-            child: IconButton(
-              icon: const Icon(Icons.shopping_cart_outlined),
-              onPressed: () => context.push('/cart'),
-            ),
           ),
           IconButton(
             icon: Badge(
               isLabelVisible: filters.hasActiveFilters,
-              child: const Icon(Icons.tune),
+              backgroundColor: AppTheme.secondaryColor,
+              child: const Icon(Icons.tune, color: AppTheme.textSecondary),
             ),
             onPressed: () => _showFiltersSheet(),
           ),
           const SizedBox(width: 8),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.grey.shade200),
+        ),
       ),
       body: RefreshIndicator(
+        color: AppTheme.primaryColor,
         onRefresh: () => ref.read(productsProvider.notifier).refresh(),
         child: CustomScrollView(
           controller: _scrollController,
           slivers: [
-            // Barra de filtros rápidos
+            // Filtros rápidos
             SliverToBoxAdapter(
               child: ProductFilterBar(
                 filters: filters,
@@ -89,7 +104,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 },
               ),
             ),
-            // Contador de resultados
+            // Resultados + clear
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -128,11 +143,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 180,
                     childAspectRatio: 0.65,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => const ProductCardShimmer(),
@@ -156,11 +171,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
               SliverPadding(
                 padding: const EdgeInsets.all(16),
                 sliver: SliverGrid(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 180,
                     childAspectRatio: 0.65,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {

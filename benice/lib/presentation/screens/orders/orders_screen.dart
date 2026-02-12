@@ -5,6 +5,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../providers/providers.dart';
 import '../../widgets/common/common_widgets.dart';
 import '../../widgets/order/order_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class OrdersScreen extends ConsumerStatefulWidget {
   const OrdersScreen({super.key});
@@ -19,7 +20,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen>
   final List<OrderStatus?> _statusFilters = [
     null, // Todos
     OrderStatus.pendiente,
-    OrderStatus.preparando,
+    OrderStatus.pagado,
     OrderStatus.enviado,
     OrderStatus.entregado,
     OrderStatus.cancelado,
@@ -40,8 +41,16 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: const Text('Mis Pedidos'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Mis Pedidos',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        iconTheme: const IconThemeData(color: AppTheme.textPrimary),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,

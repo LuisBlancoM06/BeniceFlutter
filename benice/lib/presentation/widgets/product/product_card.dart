@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/entities.dart';
+import '../../providers/favorites_provider.dart';
 
-/// Tarjeta de producto
-class ProductCard extends StatelessWidget {
+/// Tarjeta de producto - estilo web con rounded-2xl y shadow-sm
+class ProductCard extends ConsumerWidget {
   final ProductEntity product;
   final VoidCallback? onTap;
   final VoidCallback? onAddToCart;
@@ -18,43 +20,55 @@ class ProductCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(isFavoriteProvider(product.id));
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        constraints: const BoxConstraints(maxWidth: 180),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMd),
-          boxShadow: AppTheme.cardShadow,
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLg),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(color: Colors.grey.shade100),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Imagen
             Expanded(
-              flex: 3,
+              flex: 5,
               child: Stack(
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppTheme.borderRadiusMd),
+                      top: Radius.circular(AppTheme.borderRadiusLg),
                     ),
-                    child: CachedNetworkImage(
-                      imageUrl: product.mainImage,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Shimmer.fromColors(
-                        baseColor: Colors.grey[300]!,
-                        highlightColor: Colors.grey[100]!,
-                        child: Container(color: Colors.white),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        color: Colors.grey[200],
-                        child: const Icon(
-                          Icons.pets,
-                          size: 40,
-                          color: Colors.grey,
+                    child: Container(
+                      color: Colors.white,
+                      child: CachedNetworkImage(
+                        imageUrl: product.mainImage,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => Shimmer.fromColors(
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: Container(color: Colors.white),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: const Color(0xFFF3F4F6),
+                          child: const Icon(
+                            Icons.pets,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
                     ),
@@ -72,32 +86,87 @@ class ProductCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppTheme.errorColor,
                           borderRadius: BorderRadius.circular(
-                            AppTheme.borderRadiusSm,
+                            AppTheme.borderRadiusFull,
                           ),
                         ),
                         child: Text(
                           '-${product.discountPercentage}%',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
-                  // Badge de tipo de animal
+                  // Favorite button
                   Positioned(
                     top: 8,
                     right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        shape: BoxShape.circle,
+                    child: GestureDetector(
+                      onTap: () => ref
+                          .read(favoritesProvider.notifier)
+                          .toggleFavorite(product.id),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          size: 16,
+                          color: isFavorite
+                              ? AppTheme.errorColor
+                              : AppTheme.textLight,
+                        ),
                       ),
-                      child: Text(
-                        product.animalType.emoji,
-                        style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                  // Animal type badge
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.borderRadiusFull,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            product.animalType.emoji,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            product.animalType.label,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -106,19 +175,20 @@ class ProductCard extends StatelessWidget {
             ),
             // Info
             Expanded(
-              flex: 2,
+              flex: 4,
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Categoría
                     Text(
-                      product.category.label,
-                      style: TextStyle(
-                        fontSize: 11,
+                      product.category.label.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 9,
                         color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -132,29 +202,32 @@ class ProductCard extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textPrimary,
+                          height: 1.2,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     // Precio y botón
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (product.hasDiscount) ...[
+                            if (product.hasDiscount)
                               Text(
                                 '${product.price.toStringAsFixed(2)}€',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   color: AppTheme.textLight,
                                   decoration: TextDecoration.lineThrough,
+                                  decorationColor: AppTheme.textLight,
                                 ),
                               ),
-                            ],
                             Text(
                               '${product.finalPrice.toStringAsFixed(2)}€',
                               style: TextStyle(
@@ -173,15 +246,45 @@ class ProductCard extends StatelessWidget {
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor,
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.borderRadiusSm,
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    AppTheme.primaryColor,
+                                    Color(0xFF9333EA),
+                                  ],
                                 ),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primaryColor.withValues(
+                                      alpha: 0.3,
+                                    ),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
                               child: const Icon(
                                 Icons.add_shopping_cart,
                                 color: Colors.white,
-                                size: 18,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        if (!product.inStock)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Agotado',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: AppTheme.textLight,
                               ),
                             ),
                           ),
@@ -210,7 +313,7 @@ class ProductCardShimmer extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMd),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLg),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,7 +324,7 @@ class ProductCardShimmer extends StatelessWidget {
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(AppTheme.borderRadiusMd),
+                    top: Radius.circular(AppTheme.borderRadiusLg),
                   ),
                 ),
               ),
@@ -233,7 +336,7 @@ class ProductCardShimmer extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(width: 60, height: 10, color: Colors.white),
+                    Container(width: 50, height: 8, color: Colors.white),
                     const SizedBox(height: 8),
                     Container(
                       width: double.infinity,
@@ -281,7 +384,7 @@ class ProductsGrid extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.65,
+          childAspectRatio: 0.62,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
         ),
@@ -292,16 +395,28 @@ class ProductsGrid extends StatelessWidget {
 
     if (products.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No se encontraron productos',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
+              const SizedBox(height: 16),
+              Text(
+                'No se encontraron productos',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Prueba con otros filtros o categorías',
+                style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -312,7 +427,7 @@ class ProductsGrid extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.65,
+        childAspectRatio: 0.62,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -321,7 +436,6 @@ class ProductsGrid extends StatelessWidget {
         if (index >= products.length) {
           return const ProductCardShimmer();
         }
-
         final product = products[index];
         return ProductCard(
           product: product,

@@ -22,7 +22,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     if (!authState.isAuthenticated || user == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Mi Perfil')),
+        backgroundColor: const Color(0xFFF9FAFB),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          title: const Text(
+            'Mi Perfil',
+            style: TextStyle(color: AppTheme.textPrimary),
+          ),
+        ),
         body: EmptyState(
           icon: Icons.person_outline,
           title: 'Inicia Sesión',
@@ -34,8 +43,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: const Text('Mi Perfil'),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Mi Perfil',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        iconTheme: const IconThemeData(color: AppTheme.textPrimary),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -303,6 +320,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               CustomSnackBar.showSuccess(context, 'Perfil actualizado');
               Navigator.pop(context);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusFull),
+              ),
+            ),
             child: const Text('Guardar'),
           ),
         ],
@@ -353,6 +377,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               CustomSnackBar.showSuccess(context, 'Contraseña actualizada');
               Navigator.pop(context);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusFull),
+              ),
+            ),
             child: const Text('Cambiar'),
           ),
         ],
@@ -379,6 +410,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.errorColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusFull),
+              ),
             ),
             child: const Text('Cerrar Sesión'),
           ),

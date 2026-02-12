@@ -3,8 +3,16 @@ import 'dart:ui';
 
 class AppConstants {
   // Supabase Configuration
-  static const String supabaseUrl = 'YOUR_SUPABASE_URL';
-  static const String supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+  static const String supabaseUrl = 'https://ayyknhzftdlytpapdugj.supabase.co';
+  static const String supabaseAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eWtuaHpmdGRseXRwYXBkdWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzU1MjgsImV4cCI6MjA4NDQ1MTUyOH0.CcMwUeUFBFLEHUVRd199koUkmkO-aUbyukcu4Mt5BDA';
+
+  // Stripe Configuration (publishable key - safe for client)
+  static const String stripePublishableKey =
+      'pk_test_51SXzcbBfDSWtKsGGUgJ8XLN3GpL1E9FgEu3sjzFidvlMRaQQQJZvHMHaaDdryhxbwyNFbzs8hwB7Kwnnr3eYD99u00AFXVRgZn';
+
+  // Data Source Mode: set to false to use live Supabase data
+  static const bool useMockData = false;
 
   // App Info
   static const String appName = 'BeniceAstro';
@@ -85,7 +93,6 @@ enum AnimalAge {
 enum OrderStatus {
   pendiente('Pendiente', '⏳', 0xFFFFA726),
   pagado('Pagado', '💳', 0xFF42A5F5),
-  preparando('Preparando', '📋', 0xFF5C6BC0),
   enviado('Enviado', '📦', 0xFF7E57C2),
   entregado('Entregado', '✅', 0xFF66BB6A),
   cancelado('Cancelado', '❌', 0xFFEF5350);

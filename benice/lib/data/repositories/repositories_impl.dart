@@ -53,6 +53,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
     String? name,
+    String? phone,
   }) async {
     try {
       await Future.delayed(const Duration(milliseconds: 800));
@@ -151,8 +152,11 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   ResultFuture<UserEntity> updateProfile({
     String? name,
+    String? fullName,
     String? phone,
     String? address,
+    String? city,
+    String? postalCode,
     String? avatarUrl,
   }) async {
     try {
@@ -166,8 +170,11 @@ class AuthRepositoryImpl implements AuthRepository {
         id: _currentUser!.id,
         email: _currentUser!.email,
         name: name ?? _currentUser!.name,
+        fullName: fullName ?? _currentUser!.fullName,
         phone: phone ?? _currentUser!.phone,
         address: address ?? _currentUser!.address,
+        city: city ?? _currentUser!.city,
+        postalCode: postalCode ?? _currentUser!.postalCode,
         avatarUrl: avatarUrl ?? _currentUser!.avatarUrl,
         isSubscribedNewsletter: _currentUser!.isSubscribedNewsletter,
         createdAt: _currentUser!.createdAt,
@@ -382,6 +389,17 @@ class ProductRepositoryImpl implements ProductRepository {
       return Left(ServerFailure(message: e.toString()));
     }
   }
+
+  @override
+  ResultFuture<List<ProductEntity>> getOfertasFlash() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 300));
+      final ofertas = _products.where((p) => p.hasDiscount).toList();
+      return Right(ofertas);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
 }
 
 /// Implementación del repositorio de carrito
@@ -510,15 +528,6 @@ class CartRepositoryImpl implements CartRepository {
         orElse: () => throw Exception('Código de descuento inválido'),
       );
 
-      if (discount.minPurchase != null &&
-          _cart.subtotal < discount.minPurchase!) {
-        return Left(
-          ValidationFailure(
-            message: 'Compra mínima de ${discount.minPurchase}€ requerida',
-          ),
-        );
-      }
-
       _cart = CartModel(
         items: _cart.items,
         discountCode: discount.code,
@@ -602,6 +611,7 @@ class OrderRepositoryImpl implements OrderRepository {
   ResultFuture<OrderEntity> createOrder({
     required CartEntity cart,
     required String shippingAddress,
+    String? notes,
   }) async {
     try {
       await Future.delayed(const Duration(milliseconds: 800));
@@ -626,7 +636,6 @@ class OrderRepositoryImpl implements OrderRepository {
         status: OrderStatus.pagado,
         shippingAddress: shippingAddress,
         createdAt: DateTime.now(),
-        paidAt: DateTime.now(),
       );
 
       _orders.insert(0, order);
@@ -670,8 +679,6 @@ class OrderRepositoryImpl implements OrderRepository {
         notes: order.notes,
         createdAt: order.createdAt,
         updatedAt: DateTime.now(),
-        paidAt: order.paidAt,
-        cancelledAt: DateTime.now(),
       );
 
       _orders[index] = cancelledOrder;
@@ -683,7 +690,10 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  ResultFuture<OrderEntity> requestReturn(String orderId) async {
+  ResultFuture<OrderEntity> requestReturn(
+    String orderId, {
+    String? reason,
+  }) async {
     try {
       await Future.delayed(const Duration(milliseconds: 500));
 
@@ -725,15 +735,6 @@ class DiscountRepositoryImpl implements DiscountRepository {
       if (!discount.isValid) {
         return const Left(
           ValidationFailure(message: 'Código expirado o inactivo'),
-        );
-      }
-
-      if (discount.minPurchase != null && subtotal < discount.minPurchase!) {
-        return Left(
-          ValidationFailure(
-            message:
-                'Compra mínima de €${discount.minPurchase!.toStringAsFixed(2)} requerida',
-          ),
         );
       }
 

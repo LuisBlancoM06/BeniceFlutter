@@ -13,6 +13,7 @@ abstract class AuthRepository {
     required String email,
     required String password,
     String? name,
+    String? phone,
   });
 
   ResultVoid signOut();
@@ -28,8 +29,11 @@ abstract class AuthRepository {
 
   ResultFuture<UserEntity> updateProfile({
     String? name,
+    String? fullName,
     String? phone,
     String? address,
+    String? city,
+    String? postalCode,
     String? avatarUrl,
   });
 
@@ -59,6 +63,8 @@ abstract class ProductRepository {
   ResultFuture<List<ProductEntity>> getProductsByAnimalType(AnimalType type);
 
   ResultFuture<List<ProductEntity>> getRelatedProducts(String productId);
+
+  ResultFuture<List<ProductEntity>> getOfertasFlash();
 }
 
 /// Repositorio del Carrito
@@ -97,11 +103,12 @@ abstract class OrderRepository {
   ResultFuture<OrderEntity> createOrder({
     required CartEntity cart,
     required String shippingAddress,
+    String? notes,
   });
 
   ResultFuture<OrderEntity> cancelOrder(String orderId);
 
-  ResultFuture<OrderEntity> requestReturn(String orderId);
+  ResultFuture<OrderEntity> requestReturn(String orderId, {String? reason});
 }
 
 /// Repositorio de Códigos de Descuento
@@ -110,4 +117,75 @@ abstract class DiscountRepository {
     String code,
     double subtotal,
   );
+}
+
+/// Repositorio de Reviews
+abstract class ReviewRepository {
+  ResultFuture<List<ReviewEntity>> getProductReviews(String productId);
+
+  ResultFuture<ReviewStats> getReviewStats(String productId);
+
+  ResultFuture<ReviewEntity> createReview({
+    required String productId,
+    required int rating,
+    String? comment,
+  });
+
+  ResultVoid deleteReview(String reviewId);
+
+  ResultVoid voteHelpful(String reviewId);
+}
+
+/// Repositorio de Favoritos
+abstract class FavoritesRepository {
+  ResultFuture<List<String>> getFavoriteIds();
+
+  ResultVoid toggleFavorite(String productId);
+
+  ResultFuture<bool> isFavorite(String productId);
+}
+
+/// Repositorio de Admin
+abstract class AdminRepository {
+  // Productos
+  ResultFuture<ProductEntity> createProduct(Map<String, dynamic> data);
+  ResultFuture<ProductEntity> updateProduct(
+    String id,
+    Map<String, dynamic> data,
+  );
+  ResultVoid deleteProduct(String id);
+
+  // Pedidos
+  ResultFuture<List<OrderEntity>> getAllOrders({String? status});
+  ResultVoid updateOrderStatus(String orderId, String status);
+
+  // Dashboard
+  ResultFuture<DashboardStats> getDashboardStats();
+
+  // Newsletter
+  ResultFuture<List<NewsletterSubscriber>> getNewsletterSubscribers();
+  ResultVoid deleteNewsletterSubscriber(String email);
+
+  // Facturas
+  ResultFuture<List<InvoiceEntity>> getInvoices();
+
+  // Devoluciones
+  ResultFuture<List<ReturnEntity>> getReturns();
+  ResultVoid updateReturnStatus(
+    String returnId,
+    String status, {
+    String? adminNotes,
+  });
+
+  // Promo Codes
+  ResultFuture<List<DiscountCodeEntity>> getPromoCodes();
+  ResultVoid createPromoCode(Map<String, dynamic> data);
+  ResultVoid deletePromoCode(String code);
+
+  // Site Settings
+  ResultFuture<bool> getOfertasFlashActive();
+  ResultVoid setOfertasFlashActive(bool active);
+
+  // Users
+  ResultFuture<List<UserEntity>> getAllUsers();
 }

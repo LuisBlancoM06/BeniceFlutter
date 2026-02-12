@@ -1,33 +1,60 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Colores principales
-  static const Color primaryColor = Color(0xFF3B82F6); // Azul
-  static const Color secondaryColor = Color(0xFF8B5CF6); // Púrpura
-  static const Color accentColor = Color(0xFF06B6D4); // Cyan
+  // ==================== COLORES (idénticos a la web) ====================
+  // Primary: purple
+  static const Color primaryColor = Color(0xFF7E22CE); // purple-700
+  static const Color primaryLight = Color(0xFFA855F7); // purple-500
+  static const Color primaryDark = Color(0xFF6B21A8); // purple-800
+  static const Color primaryDarker = Color(0xFF581C87); // purple-900
 
-  // Gradientes
+  // Secondary/Accent: orange
+  static const Color secondaryColor = Color(0xFFF97316); // orange-500
+  static const Color secondaryLight = Color(0xFFFB923C); // orange-400
+  static const Color secondaryDark = Color(0xFFEA580C); // orange-600
+
+  // Gradientes (web)
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+    colors: [Color(0xFF7E22CE), Color(0xFF9333EA)],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
-  static const LinearGradient heroGradient = LinearGradient(
-    colors: [Color(0xFF60A5FA), Color(0xFFA78BFA)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+  static const LinearGradient heroGradientDog = LinearGradient(
+    colors: [Color(0xCC581C87), Colors.transparent],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
+
+  static const LinearGradient heroGradientCat = LinearGradient(
+    colors: [Color(0xCCC2410C), Colors.transparent],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
+
+  static const LinearGradient heroGradientFav = LinearGradient(
+    colors: [Color(0xCC1F2937), Colors.transparent],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
+
+  static const LinearGradient adminSidebarGradient = LinearGradient(
+    colors: [Color(0xFF581C87), Color(0xFF6B21A8)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
 
   // Colores de texto
-  static const Color textPrimary = Color(0xFF1F2937);
-  static const Color textSecondary = Color(0xFF6B7280);
-  static const Color textLight = Color(0xFF9CA3AF);
+  static const Color textPrimary = Color(0xFF1F2937); // gray-800
+  static const Color textSecondary = Color(0xFF6B7280); // gray-500
+  static const Color textLight = Color(0xFF9CA3AF); // gray-400
 
   // Colores de fondo
-  static const Color backgroundColor = Color(0xFFF9FAFB);
+  static const Color backgroundColor = Color(0xFFF9FAFB); // gray-50
   static const Color surfaceColor = Colors.white;
   static const Color cardColor = Colors.white;
+  static const Color footerColor = Color(0xFF111827); // gray-900
+  static const Color footerBorderColor = Color(0xFF1F2937); // gray-800
 
   // Colores de estado
   static const Color successColor = Color(0xFF10B981);
@@ -40,6 +67,7 @@ class AppTheme {
   static const double borderRadiusMd = 12.0;
   static const double borderRadiusLg = 16.0;
   static const double borderRadiusXl = 24.0;
+  static const double borderRadiusFull = 999.0;
 
   // Espaciado
   static const double spacingXs = 4.0;
@@ -71,7 +99,7 @@ class AppTheme {
     ),
   ];
 
-  // Tema principal de la app
+  // ==================== THEME DATA ====================
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -87,7 +115,7 @@ class AppTheme {
         backgroundColor: surfaceColor,
         foregroundColor: textPrimary,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         titleTextStyle: TextStyle(
           color: textPrimary,
           fontSize: 18,
@@ -162,13 +190,33 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surfaceColor,
+        indicatorColor: primaryColor.withValues(alpha: 0.12),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              color: primaryColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            );
+          }
+          return const TextStyle(color: textSecondary, fontSize: 12);
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: primaryColor, size: 24);
+          }
+          return const IconThemeData(color: textSecondary, size: 24);
+        }),
+      ),
       chipTheme: ChipThemeData(
         backgroundColor: backgroundColor,
         selectedColor: primaryColor.withValues(alpha: 0.1),
         labelStyle: const TextStyle(fontSize: 14),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadiusSm),
+          borderRadius: BorderRadius.circular(borderRadiusFull),
         ),
       ),
       dividerTheme: const DividerThemeData(

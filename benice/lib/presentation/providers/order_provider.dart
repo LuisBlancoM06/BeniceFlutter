@@ -33,7 +33,7 @@ class OrdersState {
 class OrdersNotifier extends Notifier<OrdersState> {
   @override
   OrdersState build() {
-    _loadOrders();
+    Future.microtask(() => _loadOrders());
     return const OrdersState(isLoading: true);
   }
 

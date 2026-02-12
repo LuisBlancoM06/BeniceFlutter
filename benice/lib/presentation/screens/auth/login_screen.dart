@@ -65,6 +65,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -279,6 +280,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 );
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadiusFull),
+              ),
+            ),
             child: const Text('Enviar'),
           ),
         ],

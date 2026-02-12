@@ -264,9 +264,9 @@ class OrderDetailScreen extends ConsumerWidget {
   Widget _buildActions(BuildContext context, WidgetRef ref, order) {
     return Column(
       children: [
-        // Botón de cancelar (solo si está pendiente o preparando)
+        // Botón de cancelar (solo si está pendiente o pagado)
         if (order.status == OrderStatus.pendiente ||
-            order.status == OrderStatus.preparando)
+            order.status == OrderStatus.pagado)
           PrimaryButton(
             label: 'Cancelar Pedido',
             icon: Icons.cancel_outlined,
@@ -355,7 +355,7 @@ class _OrderTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     final statuses = [
       OrderStatus.pendiente,
-      OrderStatus.preparando,
+      OrderStatus.pagado,
       OrderStatus.enviado,
       OrderStatus.entregado,
     ];

@@ -1,4 +1,5 @@
 import '../../core/constants/app_constants.dart';
+import '../../domain/entities/entities.dart';
 import '../models/models.dart';
 
 /// Datos de prueba para desarrollo sin backend
@@ -9,8 +10,12 @@ class MockDataSource {
       id: 'user-001',
       email: 'usuario@beniceastro.com',
       name: 'Usuario Demo',
+      fullName: 'Usuario Demo',
       phone: '+34 600 123 456',
-      address: 'Calle Principal 123, 28001 Madrid',
+      address: 'Calle Principal 123',
+      city: 'Madrid',
+      postalCode: '28001',
+      role: 'admin', // Para poder acceder al panel admin en demo
       isSubscribedNewsletter: false,
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
     );
@@ -27,6 +32,7 @@ class MockDataSource {
             'Alimento completo y equilibrado para perros adultos de todas las razas. Elaborado con ingredientes de alta calidad, rico en proteínas y vitaminas esenciales para mantener a tu perro sano y activo.',
         price: 45.99,
         discountPrice: 39.99,
+        onSale: true,
         images: [
           'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=500',
           'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=500',
@@ -70,6 +76,7 @@ class MockDataSource {
             'Pelota de goma duradera ideal para perros grandes y enérgicos. Resistente a mordiscos, perfecta para juegos de lanzar y buscar.',
         price: 12.99,
         discountPrice: 9.99,
+        onSale: true,
         images: [
           'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=500',
         ],
@@ -154,6 +161,7 @@ class MockDataSource {
             'Collar de nylon resistente con localizador GPS integrado. Rastrea a tu mascota desde tu móvil. Batería de larga duración.',
         price: 89.99,
         discountPrice: 74.99,
+        onSale: true,
         images: [
           'https://images.unsplash.com/photo-1599839575945-a9e5af0c3fa5?w=500',
         ],
@@ -196,6 +204,7 @@ class MockDataSource {
             'Alimento premium para gatos adultos elaborado con salmón fresco. Alto contenido en proteínas y ácidos grasos omega-3 para un pelaje brillante.',
         price: 38.99,
         discountPrice: 32.99,
+        onSale: true,
         images: [
           'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=500',
         ],
@@ -258,6 +267,7 @@ class MockDataSource {
             'Árbol rascador con múltiples plataformas, cueva y poste de sisal. Perfecto para que tu gato trepe, descanse y afile sus uñas.',
         price: 79.99,
         discountPrice: 64.99,
+        onSale: true,
         images: [
           'https://images.unsplash.com/photo-1526336024174-e58f5cdd8e13?w=500',
         ],
@@ -342,6 +352,7 @@ class MockDataSource {
             'Jaula espaciosa con rueda de ejercicio, bebedero y casita incluidos. Barras de metal resistentes y bandeja extraíble.',
         price: 49.99,
         discountPrice: 42.99,
+        onSale: true,
         images: [
           'https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=500',
         ],
@@ -413,7 +424,6 @@ class MockDataSource {
         discountPercent: 20,
         isActive: true,
         expiresAt: DateTime.now().add(const Duration(days: 90)),
-        minPurchase: 50,
       ),
       DiscountCodeModel(
         code: 'PRIMERACOMPRA',
@@ -465,9 +475,6 @@ class MockDataSource {
         shippingAddress: 'Calle Principal 123, 28001 Madrid',
         trackingNumber: 'ES123456789',
         createdAt: DateTime.now().subtract(const Duration(days: 15)),
-        paidAt: DateTime.now().subtract(const Duration(days: 15)),
-        shippedAt: DateTime.now().subtract(const Duration(days: 13)),
-        deliveredAt: DateTime.now().subtract(const Duration(days: 10)),
       ),
       OrderModel(
         id: 'order-002',
@@ -492,8 +499,6 @@ class MockDataSource {
         shippingAddress: 'Calle Principal 123, 28001 Madrid',
         trackingNumber: 'ES987654321',
         createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        paidAt: DateTime.now().subtract(const Duration(days: 3)),
-        shippedAt: DateTime.now().subtract(const Duration(days: 1)),
       ),
       OrderModel(
         id: 'order-003',
@@ -517,7 +522,6 @@ class MockDataSource {
         status: OrderStatus.pagado,
         shippingAddress: 'Calle Principal 123, 28001 Madrid',
         createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-        paidAt: DateTime.now().subtract(const Duration(hours: 5)),
       ),
       OrderModel(
         id: 'order-004',
@@ -541,7 +545,62 @@ class MockDataSource {
         status: OrderStatus.cancelado,
         shippingAddress: 'Calle Principal 123, 28001 Madrid',
         createdAt: DateTime.now().subtract(const Duration(days: 20)),
-        cancelledAt: DateTime.now().subtract(const Duration(days: 19)),
+      ),
+    ];
+  }
+
+  // Acceso estático a productos y pedidos
+  static List<ProductModel> get mockProducts => getMockProducts();
+  static List<OrderModel> get mockOrders => getMockOrders('user-001');
+  static List<DiscountCodeModel> get mockDiscountCodes =>
+      getMockDiscountCodes();
+
+  // Reviews de prueba
+  static List<ReviewEntity> getMockReviews(String productId) {
+    return [
+      ReviewEntity(
+        id: 'rev-1',
+        productId: productId,
+        userId: 'user-002',
+        userName: 'María García',
+        rating: 5,
+        comment: '¡Excelente producto! Mi perro está encantado.',
+        verifiedPurchase: true,
+        helpfulCount: 3,
+        createdAt: DateTime.now().subtract(const Duration(days: 5)),
+      ),
+      ReviewEntity(
+        id: 'rev-2',
+        productId: productId,
+        userId: 'user-003',
+        userName: 'Carlos López',
+        rating: 4,
+        comment: 'Buena calidad, aunque el envío tardó un poco.',
+        verifiedPurchase: true,
+        helpfulCount: 1,
+        createdAt: DateTime.now().subtract(const Duration(days: 10)),
+      ),
+      ReviewEntity(
+        id: 'rev-3',
+        productId: productId,
+        userId: 'user-004',
+        userName: 'Ana Martínez',
+        rating: 5,
+        comment: 'Relación calidad-precio inmejorable. Repetiré.',
+        verifiedPurchase: false,
+        helpfulCount: 0,
+        createdAt: DateTime.now().subtract(const Duration(days: 15)),
+      ),
+      ReviewEntity(
+        id: 'rev-4',
+        productId: productId,
+        userId: 'user-005',
+        userName: 'Pedro Sánchez',
+        rating: 3,
+        comment: 'Cumple su función, nada especial.',
+        verifiedPurchase: true,
+        helpfulCount: 0,
+        createdAt: DateTime.now().subtract(const Duration(days: 20)),
       ),
     ];
   }

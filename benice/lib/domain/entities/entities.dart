@@ -6,9 +6,13 @@ class UserEntity extends Equatable {
   final String id;
   final String email;
   final String? name;
+  final String? fullName;
   final String? phone;
   final String? address;
+  final String? city;
+  final String? postalCode;
   final String? avatarUrl;
+  final String role; // 'user' o 'admin'
   final bool isSubscribedNewsletter;
   final DateTime createdAt;
 
@@ -16,20 +20,30 @@ class UserEntity extends Equatable {
     required this.id,
     required this.email,
     this.name,
+    this.fullName,
     this.phone,
     this.address,
+    this.city,
+    this.postalCode,
     this.avatarUrl,
+    this.role = 'user',
     this.isSubscribedNewsletter = false,
     required this.createdAt,
   });
+
+  bool get isAdmin => role == 'admin';
 
   UserEntity copyWith({
     String? id,
     String? email,
     String? name,
+    String? fullName,
     String? phone,
     String? address,
+    String? city,
+    String? postalCode,
     String? avatarUrl,
+    String? role,
     bool? isSubscribedNewsletter,
     DateTime? createdAt,
   }) {
@@ -37,9 +51,13 @@ class UserEntity extends Equatable {
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
+      fullName: fullName ?? this.fullName,
       phone: phone ?? this.phone,
       address: address ?? this.address,
+      city: city ?? this.city,
+      postalCode: postalCode ?? this.postalCode,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      role: role ?? this.role,
       isSubscribedNewsletter:
           isSubscribedNewsletter ?? this.isSubscribedNewsletter,
       createdAt: createdAt ?? this.createdAt,
@@ -51,9 +69,13 @@ class UserEntity extends Equatable {
     id,
     email,
     name,
+    fullName,
     phone,
     address,
+    city,
+    postalCode,
     avatarUrl,
+    role,
     isSubscribedNewsletter,
     createdAt,
   ];
@@ -63,27 +85,33 @@ class UserEntity extends Equatable {
 class ProductEntity extends Equatable {
   final String id;
   final String name;
+  final String? slug;
   final String description;
   final double price;
-  final double? discountPrice;
-  final List<String> images;
+  final double? discountPrice; // DB: sale_price
+  final bool onSale; // DB: on_sale
+  final String? imageUrl; // DB: image_url (single main)
+  final List<String> images; // DB: images (text[])
   final AnimalType animalType;
-  final AnimalSize animalSize;
+  final AnimalSize animalSize; // DB: size
   final ProductCategory category;
-  final AnimalAge animalAge;
+  final AnimalAge animalAge; // DB: age_range
   final int stock;
   final String? brand;
-  final double rating;
-  final int reviewsCount;
-  final bool isFeatured;
+  final double rating; // Computed from reviews, not in products table
+  final int reviewsCount; // Computed from reviews, not in products table
+  final bool isFeatured; // Not in DB, used by mock; from DB use on_sale
   final DateTime createdAt;
 
   const ProductEntity({
     required this.id,
     required this.name,
+    this.slug,
     required this.description,
     required this.price,
     this.discountPrice,
+    this.onSale = false,
+    this.imageUrl,
     required this.images,
     required this.animalType,
     required this.animalSize,
@@ -97,20 +125,25 @@ class ProductEntity extends Equatable {
     required this.createdAt,
   });
 
-  bool get hasDiscount => discountPrice != null && discountPrice! < price;
-  double get finalPrice => discountPrice ?? price;
+  bool get hasDiscount =>
+      onSale && discountPrice != null && discountPrice! < price;
+  double get finalPrice =>
+      (onSale && discountPrice != null) ? discountPrice! : price;
   int get discountPercentage =>
       hasDiscount ? ((1 - discountPrice! / price) * 100).round() : 0;
   bool get inStock => stock > 0;
-  String get mainImage => images.isNotEmpty ? images.first : '';
+  String get mainImage => imageUrl ?? (images.isNotEmpty ? images.first : '');
 
   @override
   List<Object?> get props => [
     id,
     name,
+    slug,
     description,
     price,
     discountPrice,
+    onSale,
+    imageUrl,
     images,
     animalType,
     animalSize,
@@ -196,20 +229,19 @@ class OrderEntity extends Equatable {
   final String userId;
   final List<OrderItemEntity> items;
   final double subtotal;
-  final double discount;
+  final double discount; // DB: discount_amount
   final double shippingCost;
   final double total;
-  final String? discountCode;
+  final String? discountCode; // DB: promo_code
   final OrderStatus status;
-  final String shippingAddress;
+  final String shippingAddress; // DB: shipping_address
+  final String? shippingName; // DB: shipping_name
+  final String? shippingPhone; // DB: shipping_phone
+  final String? stripeSessionId; // DB: stripe_session_id
   final String? trackingNumber;
   final String? notes;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final DateTime? paidAt;
-  final DateTime? shippedAt;
-  final DateTime? deliveredAt;
-  final DateTime? cancelledAt;
 
   const OrderEntity({
     required this.id,
@@ -223,14 +255,13 @@ class OrderEntity extends Equatable {
     this.discountCode,
     required this.status,
     required this.shippingAddress,
+    this.shippingName,
+    this.shippingPhone,
+    this.stripeSessionId,
     this.trackingNumber,
     this.notes,
     required this.createdAt,
     this.updatedAt,
-    this.paidAt,
-    this.shippedAt,
-    this.deliveredAt,
-    this.cancelledAt,
   });
 
   OrderEntity copyWith({
@@ -245,14 +276,13 @@ class OrderEntity extends Equatable {
     String? discountCode,
     OrderStatus? status,
     String? shippingAddress,
+    String? shippingName,
+    String? shippingPhone,
+    String? stripeSessionId,
     String? trackingNumber,
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
-    DateTime? paidAt,
-    DateTime? shippedAt,
-    DateTime? deliveredAt,
-    DateTime? cancelledAt,
   }) {
     return OrderEntity(
       id: id ?? this.id,
@@ -266,14 +296,13 @@ class OrderEntity extends Equatable {
       discountCode: discountCode ?? this.discountCode,
       status: status ?? this.status,
       shippingAddress: shippingAddress ?? this.shippingAddress,
+      shippingName: shippingName ?? this.shippingName,
+      shippingPhone: shippingPhone ?? this.shippingPhone,
+      stripeSessionId: stripeSessionId ?? this.stripeSessionId,
       trackingNumber: trackingNumber ?? this.trackingNumber,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      paidAt: paidAt ?? this.paidAt,
-      shippedAt: shippedAt ?? this.shippedAt,
-      deliveredAt: deliveredAt ?? this.deliveredAt,
-      cancelledAt: cancelledAt ?? this.cancelledAt,
     );
   }
 
@@ -293,14 +322,13 @@ class OrderEntity extends Equatable {
     discountCode,
     status,
     shippingAddress,
+    shippingName,
+    shippingPhone,
+    stripeSessionId,
     trackingNumber,
     notes,
     createdAt,
     updatedAt,
-    paidAt,
-    shippedAt,
-    deliveredAt,
-    cancelledAt,
   ];
 }
 
@@ -336,35 +364,267 @@ class OrderItemEntity extends Equatable {
   ];
 }
 
-/// Entidad de Código de Descuento
+/// Entidad de Código de Descuento (DB: promo_codes)
 class DiscountCodeEntity extends Equatable {
+  final String? id;
   final String code;
-  final double discountPercent;
-  final bool isActive;
-  final DateTime? expiresAt;
-  final double? minPurchase;
+  final double discountPercent; // DB: discount_percentage (int)
+  final bool isActive; // DB: active
+  final int? maxUses; // DB: max_uses
+  final int currentUses; // DB: current_uses
+  final DateTime? expiresAt; // DB: expires_at
+  final DateTime? createdAt;
 
   const DiscountCodeEntity({
+    this.id,
     required this.code,
     required this.discountPercent,
     this.isActive = true,
+    this.maxUses,
+    this.currentUses = 0,
     this.expiresAt,
-    this.minPurchase,
+    this.createdAt,
   });
 
   bool get isValid {
     if (!isActive) return false;
     if (expiresAt != null && DateTime.now().isAfter(expiresAt!)) return false;
+    if (maxUses != null && currentUses >= maxUses!) return false;
     return true;
   }
 
   @override
   List<Object?> get props => [
+    id,
     code,
     discountPercent,
     isActive,
+    maxUses,
+    currentUses,
     expiresAt,
-    minPurchase,
+    createdAt,
+  ];
+}
+
+/// Entidad de Reseña de Producto
+class ReviewEntity extends Equatable {
+  final String id;
+  final String productId;
+  final String userId;
+  final String userName;
+  final int rating;
+  final String? comment;
+  final bool verifiedPurchase;
+  final int helpfulCount;
+  final DateTime createdAt;
+
+  const ReviewEntity({
+    required this.id,
+    required this.productId,
+    required this.userId,
+    required this.userName,
+    required this.rating,
+    this.comment,
+    this.verifiedPurchase = false,
+    this.helpfulCount = 0,
+    required this.createdAt,
+  });
+
+  @override
+  List<Object?> get props => [
+    id,
+    productId,
+    userId,
+    userName,
+    rating,
+    comment,
+    verifiedPurchase,
+    helpfulCount,
+    createdAt,
+  ];
+}
+
+/// Estadísticas de reseñas de un producto
+class ReviewStats extends Equatable {
+  final double averageRating;
+  final int totalReviews;
+  final Map<int, int> distribution; // {5: 10, 4: 5, 3: 2, 2: 1, 1: 0}
+
+  const ReviewStats({
+    this.averageRating = 0,
+    this.totalReviews = 0,
+    this.distribution = const {5: 0, 4: 0, 3: 0, 2: 0, 1: 0},
+  });
+
+  @override
+  List<Object?> get props => [averageRating, totalReviews, distribution];
+}
+
+/// Entidad de Factura (DB: invoices)
+class InvoiceEntity extends Equatable {
+  final String id;
+  final String orderId; // DB: order_id
+  final String userId; // DB: user_id
+  final String invoiceNumber; // DB: invoice_number
+  final String invoiceType; // DB: invoice_type ('factura' | 'abono')
+  final double subtotal;
+  final double taxAmount; // DB: tax_amount
+  final double total;
+  final String? pdfUrl; // DB: pdf_url
+  final DateTime createdAt; // DB: created_at
+
+  const InvoiceEntity({
+    required this.id,
+    required this.orderId,
+    required this.userId,
+    required this.invoiceNumber,
+    required this.invoiceType,
+    required this.subtotal,
+    required this.taxAmount,
+    required this.total,
+    this.pdfUrl,
+    required this.createdAt,
+  });
+
+  @override
+  List<Object?> get props => [
+    id,
+    orderId,
+    userId,
+    invoiceNumber,
+    invoiceType,
+    subtotal,
+    taxAmount,
+    total,
+    pdfUrl,
+    createdAt,
+  ];
+}
+
+/// Entidad de Devolución (DB: returns)
+class ReturnEntity extends Equatable {
+  final String id;
+  final String orderId;
+  final String userId;
+  final String reason;
+  final String status; // 'solicitada', 'aprobada', 'rechazada', 'completada'
+  final double? refundAmount; // DB: refund_amount
+  final String? adminNotes; // DB: admin_notes
+  final DateTime createdAt;
+  final DateTime? updatedAt; // DB: updated_at
+
+  const ReturnEntity({
+    required this.id,
+    required this.orderId,
+    required this.userId,
+    required this.reason,
+    this.status = 'solicitada',
+    this.refundAmount,
+    this.adminNotes,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
+  @override
+  List<Object?> get props => [
+    id,
+    orderId,
+    userId,
+    reason,
+    status,
+    refundAmount,
+    adminNotes,
+    createdAt,
+    updatedAt,
+  ];
+}
+
+/// Entidad de Suscriptor Newsletter (DB: newsletters)
+class NewsletterSubscriber extends Equatable {
+  final String id;
+  final String email;
+  final String promoCode; // DB: promo_code (required)
+  final String source; // DB: source ('footer' default)
+  final DateTime createdAt; // DB: created_at
+
+  const NewsletterSubscriber({
+    required this.id,
+    required this.email,
+    required this.promoCode,
+    this.source = 'footer',
+    required this.createdAt,
+  });
+
+  @override
+  List<Object?> get props => [id, email, promoCode, source, createdAt];
+}
+
+/// Entidad de Configuración del Sitio
+class SiteSettingsEntity extends Equatable {
+  final bool ofertasFlashActive;
+  final String storeName;
+  final String storeEmail;
+  final String storePhone;
+
+  const SiteSettingsEntity({
+    this.ofertasFlashActive = false,
+    this.storeName = 'BeniceAstro',
+    this.storeEmail = 'info@benice.com',
+    this.storePhone = '+34 600 000 000',
+  });
+
+  @override
+  List<Object?> get props => [
+    ofertasFlashActive,
+    storeName,
+    storeEmail,
+    storePhone,
+  ];
+}
+
+/// Entidad de Producto Favorito
+class FavoriteEntity extends Equatable {
+  final String productId;
+  final DateTime addedAt;
+
+  const FavoriteEntity({required this.productId, required this.addedAt});
+
+  @override
+  List<Object?> get props => [productId, addedAt];
+}
+
+/// Datos del Dashboard Admin
+class DashboardStats extends Equatable {
+  final double totalSales;
+  final int totalOrders;
+  final int totalUsers;
+  final int totalProducts;
+  final int lowStockProducts;
+  final List<OrderEntity> recentOrders;
+  final Map<String, double> salesByMonth;
+  final Map<String, int> ordersByStatus;
+
+  const DashboardStats({
+    this.totalSales = 0,
+    this.totalOrders = 0,
+    this.totalUsers = 0,
+    this.totalProducts = 0,
+    this.lowStockProducts = 0,
+    this.recentOrders = const [],
+    this.salesByMonth = const {},
+    this.ordersByStatus = const {},
+  });
+
+  @override
+  List<Object?> get props => [
+    totalSales,
+    totalOrders,
+    totalUsers,
+    totalProducts,
+    lowStockProducts,
+    recentOrders,
+    salesByMonth,
+    ordersByStatus,
   ];
 }
 

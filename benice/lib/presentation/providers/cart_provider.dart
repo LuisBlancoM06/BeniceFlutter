@@ -39,7 +39,7 @@ class CartState {
 class CartNotifier extends Notifier<CartState> {
   @override
   CartState build() {
-    _loadCart();
+    Future.microtask(() => _loadCart());
     return const CartState();
   }
 

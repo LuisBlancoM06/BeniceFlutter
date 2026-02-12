@@ -224,7 +224,7 @@ class NewsletterBanner extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppTheme.heroGradient,
+        gradient: AppTheme.primaryGradient,
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLg),
       ),
       child: Row(

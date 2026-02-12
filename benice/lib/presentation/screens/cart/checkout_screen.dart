@@ -47,7 +47,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Finalizar Compra')),
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Finalizar Compra',
+          style: TextStyle(color: AppTheme.textPrimary),
+        ),
+        iconTheme: const IconThemeData(color: AppTheme.textPrimary),
+      ),
       body: cart.items.isEmpty
           ? const EmptyState(
               icon: Icons.shopping_cart_outlined,
@@ -437,6 +447,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       Navigator.pop(context);
                       context.go('/orders/${order.id}');
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.borderRadiusFull,
+                        ),
+                      ),
+                    ),
                     child: const Text('Ver Pedido'),
                   ),
                 ),

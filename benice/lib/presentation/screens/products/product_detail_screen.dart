@@ -8,6 +8,7 @@ import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
 import '../../widgets/common/common_widgets.dart';
 import '../../widgets/product/product_card.dart';
+import '../../widgets/product/review_widgets.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -66,7 +67,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
       slivers: [
         // App Bar
         SliverAppBar(
-          expandedHeight: 350,
+          expandedHeight: 200,
           pinned: true,
           backgroundColor: Colors.white,
           leading: Container(
@@ -97,14 +98,24 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
             ),
           ],
           flexibleSpace: FlexibleSpaceBar(
-            background: _ImageCarousel(
-              images: product.images,
-              currentIndex: _currentImageIndex,
-              onIndexChanged: (index) {
-                setState(() => _currentImageIndex = index);
+            background: Builder(
+              builder: (context) {
+                // Combine imageUrl + images, deduplicate
+                final allImages = <String>{
+                  if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                    product.imageUrl!,
+                  ...product.images,
+                }.toList();
+                return _ImageCarousel(
+                  images: allImages,
+                  currentIndex: _currentImageIndex,
+                  onIndexChanged: (index) {
+                    setState(() => _currentImageIndex = index);
+                  },
+                  hasDiscount: product.hasDiscount,
+                  discountPercentage: product.discountPercentage,
+                );
               },
-              hasDiscount: product.hasDiscount,
-              discountPercentage: product.discountPercentage,
             ),
           ),
         ),
@@ -251,6 +262,16 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       onChanged: (value) => setState(() => _quantity = value),
                     ),
                   ],
+                  const SizedBox(height: 32),
+                  // ---- Sección de Reseñas ----
+                  const Text(
+                    'Reseñas de Clientes',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  CreateReviewForm(productId: product.id),
+                  const SizedBox(height: 12),
+                  ReviewsList(productId: product.id),
                 ],
               ),
             ),
@@ -406,26 +427,34 @@ class _ImageCarousel extends StatelessWidget {
       children: [
         if (images.isEmpty)
           Container(
-            color: Colors.grey[200],
+            color: Colors.grey[100],
             child: const Center(
               child: Icon(Icons.pets, size: 64, color: Colors.grey),
             ),
           )
         else if (images.length == 1)
-          CachedNetworkImage(
-            imageUrl: images.first,
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.cover,
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(8),
+            child: CachedNetworkImage(
+              imageUrl: images.first,
+              width: double.infinity,
+              height: double.infinity,
+              fit: BoxFit.contain,
+            ),
           )
         else
           CarouselSlider.builder(
             itemCount: images.length,
             itemBuilder: (context, index, realIndex) {
-              return CachedNetworkImage(
-                imageUrl: images[index],
-                width: double.infinity,
-                fit: BoxFit.cover,
+              return Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(8),
+                child: CachedNetworkImage(
+                  imageUrl: images[index],
+                  width: double.infinity,
+                  fit: BoxFit.contain,
+                ),
               );
             },
             options: CarouselOptions(

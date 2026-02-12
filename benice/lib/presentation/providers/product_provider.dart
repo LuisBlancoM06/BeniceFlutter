@@ -41,7 +41,8 @@ class ProductsState {
 class ProductsNotifier extends Notifier<ProductsState> {
   @override
   ProductsState build() {
-    _loadProducts();
+    // Iniciar carga después de que build() retorne
+    Future.microtask(() => _loadProducts());
     return const ProductsState(isLoading: true);
   }
 
@@ -239,5 +240,17 @@ final productsByAnimalTypeProvider =
       final result = await ref
           .read(productRepositoryProvider)
           .getProductsByAnimalType(animalType);
+      return result.fold((failure) => [], (products) => products);
+    });
+
+/// Provider de productos filtrados (usado por el recomendador)
+final filteredProductsProvider =
+    FutureProvider.family<List<ProductEntity>, ProductFilters>((
+      ref,
+      filters,
+    ) async {
+      final result = await ref
+          .read(productRepositoryProvider)
+          .getProducts(page: 1, limit: 50, filters: filters);
       return result.fold((failure) => [], (products) => products);
     });
