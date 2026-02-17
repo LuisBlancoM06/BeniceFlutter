@@ -109,7 +109,7 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
               ),
@@ -195,19 +195,19 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
     final animals = [
       {
         'type': AnimalType.perro,
-        'emoji': '🐕',
+        'icon': Icons.pets,
         'name': 'Perro',
         'desc': 'Fieles compañeros',
       },
       {
         'type': AnimalType.gato,
-        'emoji': '🐈',
+        'icon': Icons.pets,
         'name': 'Gato',
         'desc': 'Independientes y cariñosos',
       },
       {
         'type': AnimalType.otro,
-        'emoji': '🐾',
+        'icon': Icons.cruelty_free,
         'name': 'Otro',
         'desc': 'Pájaros, peces, roedores...',
       },
@@ -216,7 +216,7 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
       children: animals
           .map(
             (a) => _OptionCard(
-              emoji: a['emoji'] as String,
+              iconData: a['icon'] as IconData,
               title: a['name'] as String,
               subtitle: a['desc'] as String,
               selected: _selectedAnimal == a['type'],
@@ -232,18 +232,28 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
     final ages = [
       {
         'id': 'cachorro',
-        'emoji': '🍼',
+        'icon': Icons.child_care,
         'name': _selectedAnimal == AnimalType.gato ? 'Gatito' : 'Cachorro',
         'desc': '0-12 meses',
       },
-      {'id': 'adulto', 'emoji': '💪', 'name': 'Adulto', 'desc': '1-7 años'},
-      {'id': 'senior', 'emoji': '👴', 'name': 'Senior', 'desc': '+7 años'},
+      {
+        'id': 'adulto',
+        'icon': Icons.fitness_center,
+        'name': 'Adulto',
+        'desc': '1-7 años',
+      },
+      {
+        'id': 'senior',
+        'icon': Icons.elderly,
+        'name': 'Senior',
+        'desc': '+7 años',
+      },
     ];
     return ListView(
       children: ages
           .map(
             (a) => _OptionCard(
-              emoji: a['emoji'] as String,
+              iconData: a['icon'] as IconData,
               title: a['name'] as String,
               subtitle: a['desc'] as String,
               selected: _selectedAge == a['id'],
@@ -258,31 +268,31 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
     final needs = [
       {
         'id': 'alimentacion',
-        'emoji': '🍖',
+        'icon': Icons.restaurant,
         'name': 'Alimentación',
         'desc': 'Piensos y comida húmeda',
       },
       {
         'id': 'juguetes',
-        'emoji': '🎾',
+        'icon': Icons.sports_esports,
         'name': 'Juguetes',
         'desc': 'Diversión y estimulación',
       },
       {
         'id': 'higiene',
-        'emoji': '🧴',
+        'icon': Icons.clean_hands,
         'name': 'Higiene',
         'desc': 'Champús y cuidado',
       },
       {
         'id': 'salud',
-        'emoji': '💊',
+        'icon': Icons.medication,
         'name': 'Salud',
         'desc': 'Vitaminas y suplementos',
       },
       {
         'id': 'accesorios',
-        'emoji': '🦴',
+        'icon': Icons.shopping_bag,
         'name': 'Accesorios',
         'desc': 'Camas, collares y más',
       },
@@ -291,7 +301,7 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
       children: needs
           .map(
             (n) => _OptionCard(
-              emoji: n['emoji'] as String,
+              iconData: n['icon'] as IconData,
               title: n['name'] as String,
               subtitle: n['desc'] as String,
               selected: _selectedNeed == n['id'],
@@ -304,11 +314,21 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
 
   Widget _buildBudgetStep() {
     final budgets = [
-      {'id': 'bajo', 'emoji': '💰', 'name': 'Económico', 'desc': 'Hasta 20€'},
-      {'id': 'medio', 'emoji': '💰💰', 'name': 'Medio', 'desc': '20€ - 50€'},
+      {
+        'id': 'bajo',
+        'icon': Icons.savings,
+        'name': 'Económico',
+        'desc': 'Hasta 20€',
+      },
+      {
+        'id': 'medio',
+        'icon': Icons.account_balance_wallet,
+        'name': 'Medio',
+        'desc': '20€ - 50€',
+      },
       {
         'id': 'alto',
-        'emoji': '💰💰💰',
+        'icon': Icons.diamond,
         'name': 'Premium',
         'desc': 'Más de 50€',
       },
@@ -317,7 +337,7 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
       children: budgets
           .map(
             (b) => _OptionCard(
-              emoji: b['emoji'] as String,
+              iconData: b['icon'] as IconData,
               title: b['name'] as String,
               subtitle: b['desc'] as String,
               selected: _selectedBudget == b['id'],
@@ -374,7 +394,7 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
               const SizedBox(height: 8),
               Text(
                 'Para ${_selectedAnimal?.label ?? ''} ${_selectedAge ?? ''} - ${_selectedNeed ?? ''}',
-                style: TextStyle(color: Colors.white.withOpacity(0.9)),
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
               ),
             ],
           ),
@@ -399,7 +419,7 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () => context.push('/products'),
+                        onPressed: () => context.go('/products'),
                         child: const Text('Ver todos los productos'),
                       ),
                     ],
@@ -437,14 +457,14 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
 }
 
 class _OptionCard extends StatelessWidget {
-  final String emoji;
+  final IconData iconData;
   final String title;
   final String subtitle;
   final bool selected;
   final VoidCallback onTap;
 
   const _OptionCard({
-    required this.emoji,
+    required this.iconData,
     required this.title,
     required this.subtitle,
     required this.selected,
@@ -471,14 +491,14 @@ class _OptionCard extends StatelessWidget {
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: Colors.purple.withOpacity(0.1),
+                      color: Colors.purple.withValues(alpha: 0.1),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -486,7 +506,11 @@ class _OptionCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 32)),
+              Icon(
+                iconData,
+                size: 32,
+                color: selected ? Colors.purple.shade700 : Colors.grey[700],
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

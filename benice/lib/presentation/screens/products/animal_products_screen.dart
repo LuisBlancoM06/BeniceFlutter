@@ -36,7 +36,7 @@ class AnimalProductsScreen extends ConsumerWidget {
                   gradient: LinearGradient(
                     colors: [
                       config['color'] as Color,
-                      (config['color'] as Color).withOpacity(0.7),
+                      (config['color'] as Color).withValues(alpha: 0.7),
                     ],
                   ),
                 ),
@@ -49,9 +49,10 @@ class AnimalProductsScreen extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              config['emoji'] as String,
-                              style: const TextStyle(fontSize: 48),
+                            Icon(
+                              config['icon'] as IconData,
+                              size: 48,
+                              color: Colors.white,
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -71,7 +72,9 @@ class AnimalProductsScreen extends ConsumerWidget {
                                     config['description'] as String,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -130,12 +133,12 @@ class AnimalProductsScreen extends ConsumerWidget {
                     height: 90,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
-                      children: (config['categories'] as List<Map<String, String>>)
+                      children: (config['categories'] as List<Map<String, dynamic>>)
                           .map((cat) {
                             return Padding(
                               padding: const EdgeInsets.only(right: 12),
                               child: GestureDetector(
-                                onTap: () => context.push(
+                                onTap: () => context.go(
                                   '/products?animal=${animalType.name}&category=${cat['id']}',
                                 ),
                                 child: Container(
@@ -149,7 +152,9 @@ class AnimalProductsScreen extends ConsumerWidget {
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.05,
+                                        ),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
@@ -158,13 +163,14 @@ class AnimalProductsScreen extends ConsumerWidget {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text(
-                                        cat['icon']!,
-                                        style: const TextStyle(fontSize: 24),
+                                      Icon(
+                                        cat['icon'] as IconData,
+                                        size: 24,
+                                        color: Colors.grey[700],
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        cat['name']!,
+                                        cat['name'] as String,
                                         style: const TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w600,
@@ -207,7 +213,7 @@ class AnimalProductsScreen extends ConsumerWidget {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: GestureDetector(
-                            onTap: () => context.push(
+                            onTap: () => context.go(
                               '/products?animal=${animalType.name}&age=${age['id']}',
                             ),
                             child: Container(
@@ -215,16 +221,18 @@ class AnimalProductsScreen extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
-                                    (config['color'] as Color).withOpacity(0.1),
-                                    (config['color'] as Color).withOpacity(
-                                      0.05,
+                                    (config['color'] as Color).withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    (config['color'] as Color).withValues(
+                                      alpha: 0.05,
                                     ),
                                   ],
                                 ),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: (config['color'] as Color).withOpacity(
-                                    0.3,
+                                  color: (config['color'] as Color).withValues(
+                                    alpha: 0.3,
                                   ),
                                 ),
                               ),
@@ -273,7 +281,7 @@ class AnimalProductsScreen extends ConsumerWidget {
                   ),
                   TextButton(
                     onPressed: () =>
-                        context.push('/products?animal=${animalType.name}'),
+                        context.go('/products?animal=${animalType.name}'),
                     child: const Text('Ver todos'),
                   ),
                 ],
@@ -349,16 +357,28 @@ class AnimalProductsScreen extends ConsumerWidget {
       case AnimalType.perro:
         return {
           'name': 'Perros',
-          'emoji': '🐕',
+          'icon': Icons.pets,
           'description':
               'Todo lo que tu perro necesita para ser feliz y estar sano',
           'color': Colors.blue,
-          'categories': <Map<String, String>>[
-            {'id': 'alimentacion', 'name': 'Alimentación', 'icon': '🍖'},
-            {'id': 'juguetes', 'name': 'Juguetes', 'icon': '🎾'},
-            {'id': 'higiene', 'name': 'Higiene', 'icon': '🧴'},
-            {'id': 'salud', 'name': 'Salud', 'icon': '💊'},
-            {'id': 'accesorios', 'name': 'Accesorios', 'icon': '🦴'},
+          'categories': <Map<String, dynamic>>[
+            {
+              'id': 'alimentacion',
+              'name': 'Alimentación',
+              'icon': Icons.restaurant,
+            },
+            {
+              'id': 'juguetes',
+              'name': 'Juguetes',
+              'icon': Icons.sports_esports,
+            },
+            {'id': 'higiene', 'name': 'Higiene', 'icon': Icons.clean_hands},
+            {'id': 'salud', 'name': 'Salud', 'icon': Icons.medication},
+            {
+              'id': 'accesorios',
+              'name': 'Accesorios',
+              'icon': Icons.shopping_bag,
+            },
           ],
           'ages': <Map<String, String>>[
             {'id': 'cachorro', 'name': 'Cachorro', 'desc': '0-12 meses'},
@@ -369,16 +389,28 @@ class AnimalProductsScreen extends ConsumerWidget {
       case AnimalType.gato:
         return {
           'name': 'Gatos',
-          'emoji': '🐈',
+          'icon': Icons.pets,
           'description':
               'Alimentación premium y accesorios para felinos exigentes',
           'color': Colors.orange,
-          'categories': <Map<String, String>>[
-            {'id': 'alimentacion', 'name': 'Alimentación', 'icon': '🐟'},
-            {'id': 'juguetes', 'name': 'Juguetes', 'icon': '🐭'},
-            {'id': 'higiene', 'name': 'Higiene', 'icon': '🧹'},
-            {'id': 'salud', 'name': 'Salud', 'icon': '💊'},
-            {'id': 'accesorios', 'name': 'Accesorios', 'icon': '🏠'},
+          'categories': <Map<String, dynamic>>[
+            {
+              'id': 'alimentacion',
+              'name': 'Alimentación',
+              'icon': Icons.set_meal,
+            },
+            {
+              'id': 'juguetes',
+              'name': 'Juguetes',
+              'icon': Icons.sports_esports,
+            },
+            {
+              'id': 'higiene',
+              'name': 'Higiene',
+              'icon': Icons.cleaning_services,
+            },
+            {'id': 'salud', 'name': 'Salud', 'icon': Icons.medication},
+            {'id': 'accesorios', 'name': 'Accesorios', 'icon': Icons.home},
           ],
           'ages': <Map<String, String>>[
             {'id': 'cachorro', 'name': 'Gatito', 'desc': '0-12 meses'},
@@ -389,14 +421,14 @@ class AnimalProductsScreen extends ConsumerWidget {
       case AnimalType.otro:
         return {
           'name': 'Otros Animales',
-          'emoji': '🐾',
+          'icon': Icons.cruelty_free,
           'description': 'Pájaros, peces, roedores y más',
           'color': Colors.green,
-          'categories': <Map<String, String>>[
-            {'id': 'alimentacion', 'name': 'Alimentación', 'icon': '🌾'},
-            {'id': 'accesorios', 'name': 'Accesorios', 'icon': '🏠'},
-            {'id': 'salud', 'name': 'Salud', 'icon': '💊'},
-            {'id': 'juguetes', 'name': 'Juguetes', 'icon': '🎡'},
+          'categories': <Map<String, dynamic>>[
+            {'id': 'alimentacion', 'name': 'Alimentación', 'icon': Icons.grass},
+            {'id': 'accesorios', 'name': 'Accesorios', 'icon': Icons.home},
+            {'id': 'salud', 'name': 'Salud', 'icon': Icons.medication},
+            {'id': 'juguetes', 'name': 'Juguetes', 'icon': Icons.attractions},
           ],
           'ages': <Map<String, String>>[
             {'id': 'cachorro', 'name': 'Joven', 'desc': 'Primeros meses'},

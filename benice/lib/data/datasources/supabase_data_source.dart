@@ -169,7 +169,8 @@ class SupabaseDataSource {
         .select()
         .eq('on_sale', true)
         .gt('stock', 0)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(20);
     return (data as List).map((e) => ProductModel.fromJson(e)).toList();
   }
 

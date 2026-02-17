@@ -21,7 +21,7 @@ class FaqScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildCategory('🛒 Compras', [
+            _buildCategory('Compras', [
               _FAQ(
                 '¿Cómo hago un pedido?',
                 'Navega por nuestra tienda, añade productos al carrito y sigue el proceso de checkout. Te enviaremos un email de confirmación.',
@@ -35,7 +35,7 @@ class FaqScreen extends StatelessWidget {
                 'Sí, tienes 14 días desde la recepción para solicitar una devolución desde "Mis Pedidos".',
               ),
             ]),
-            _buildCategory('📦 Envíos', [
+            _buildCategory('Envíos', [
               _FAQ(
                 '¿Cuánto cuesta el envío?',
                 'El envío estándar cuesta 4.99€. ¡Envío GRATIS en pedidos superiores a 49€!',
@@ -49,7 +49,7 @@ class FaqScreen extends StatelessWidget {
                 'Actualmente enviamos a toda España y Portugal. Consulta para otros países.',
               ),
             ]),
-            _buildCategory('💳 Pagos', [
+            _buildCategory('Pagos', [
               _FAQ(
                 '¿Qué métodos de pago aceptáis?',
                 'Aceptamos tarjetas de crédito/débito (Visa, Mastercard) a través de Stripe, el procesador de pagos más seguro.',
@@ -63,7 +63,7 @@ class FaqScreen extends StatelessWidget {
                 'Sí, introduce tu código en el carrito antes de proceder al pago.',
               ),
             ]),
-            _buildCategory('🐾 Productos', [
+            _buildCategory('Productos', [
               _FAQ(
                 '¿Los productos son de calidad?',
                 'Trabajamos solo con marcas premium y verificamos la calidad de cada producto.',
@@ -77,7 +77,7 @@ class FaqScreen extends StatelessWidget {
                 'Usa nuestros filtros por tipo de animal, tamaño y edad para encontrar los productos ideales.',
               ),
             ]),
-            _buildCategory('👤 Cuenta', [
+            _buildCategory('Cuenta', [
               _FAQ(
                 '¿Necesito una cuenta para comprar?',
                 'Sí, crear una cuenta es gratuito y te permite hacer seguimiento de tus pedidos.',

@@ -1,5 +1,5 @@
 // Constantes de la aplicación BeniceAstro
-import 'dart:ui';
+import 'package:flutter/material.dart';
 
 class AppConstants {
   // Supabase Configuration
@@ -45,13 +45,13 @@ class AppConstants {
 
 // Tipos de animales
 enum AnimalType {
-  perro('Perros', '🐕'),
-  gato('Gatos', '🐈'),
-  otro('Otros Animales', '🐹');
+  perro('Perros', Icons.pets),
+  gato('Gatos', Icons.pets),
+  otro('Otros Animales', Icons.cruelty_free);
 
   final String label;
-  final String emoji;
-  const AnimalType(this.label, this.emoji);
+  final IconData icon;
+  const AnimalType(this.label, this.icon);
 }
 
 // Tamaños de animales
@@ -67,15 +67,15 @@ enum AnimalSize {
 
 // Categorías de productos
 enum ProductCategory {
-  alimentacion('Alimentación', '🍖'),
-  higiene('Higiene', '🧴'),
-  salud('Salud', '💊'),
-  accesorios('Accesorios', '🎀'),
-  juguetes('Juguetes', '🎾');
+  alimentacion('Alimentación', Icons.restaurant),
+  higiene('Higiene', Icons.clean_hands),
+  salud('Salud', Icons.medication),
+  accesorios('Accesorios', Icons.shopping_bag),
+  juguetes('Juguetes', Icons.sports_esports);
 
   final String label;
-  final String emoji;
-  const ProductCategory(this.label, this.emoji);
+  final IconData icon;
+  const ProductCategory(this.label, this.icon);
 }
 
 // Edad del animal
@@ -91,16 +91,16 @@ enum AnimalAge {
 
 // Estados de pedido
 enum OrderStatus {
-  pendiente('Pendiente', '⏳', 0xFFFFA726),
-  pagado('Pagado', '💳', 0xFF42A5F5),
-  enviado('Enviado', '📦', 0xFF7E57C2),
-  entregado('Entregado', '✅', 0xFF66BB6A),
-  cancelado('Cancelado', '❌', 0xFFEF5350);
+  pendiente('Pendiente', Icons.hourglass_empty, 0xFFFFA726),
+  pagado('Pagado', Icons.credit_card, 0xFF42A5F5),
+  enviado('Enviado', Icons.local_shipping, 0xFF7E57C2),
+  entregado('Entregado', Icons.check_circle, 0xFF66BB6A),
+  cancelado('Cancelado', Icons.cancel, 0xFFEF5350);
 
   final String label;
-  final String emoji;
+  final IconData icon;
   final int colorValue;
-  const OrderStatus(this.label, this.emoji, this.colorValue);
+  const OrderStatus(this.label, this.icon, this.colorValue);
 
   Color get color => Color(colorValue);
 }

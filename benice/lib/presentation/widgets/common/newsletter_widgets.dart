@@ -234,7 +234,7 @@ class NewsletterBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '🎁 ${AppConstants.newsletterDiscountPercent}% de descuento',
+                  '${AppConstants.newsletterDiscountPercent}% de descuento',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -260,7 +260,7 @@ class NewsletterBanner extends StatelessWidget {
               ],
             ),
           ),
-          const Text('📧', style: TextStyle(fontSize: 48)),
+          const Icon(Icons.email, size: 48, color: Colors.white),
         ],
       ),
     );

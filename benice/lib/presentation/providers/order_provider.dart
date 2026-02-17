@@ -139,17 +139,11 @@ final orderProvider = NotifierProvider<OrdersNotifier, OrdersState>(
   OrdersNotifier.new,
 );
 
-/// Provider para listar pedidos
-final ordersProvider = FutureProvider<List<OrderEntity>>((ref) async {
-  final result = await ref.read(orderRepositoryProvider).getOrders();
-  return result.fold((failure) => [], (orders) => orders);
-});
-
 /// Provider para detalle de pedido
-final orderDetailProvider = FutureProvider.family<OrderEntity?, String>((
-  ref,
-  orderId,
-) async {
-  final result = await ref.read(orderRepositoryProvider).getOrderById(orderId);
-  return result.fold((failure) => null, (order) => order);
-});
+final orderDetailProvider = FutureProvider.autoDispose
+    .family<OrderEntity?, String>((ref, orderId) async {
+      final result = await ref
+          .read(orderRepositoryProvider)
+          .getOrderById(orderId);
+      return result.fold((failure) => null, (order) => order);
+    });

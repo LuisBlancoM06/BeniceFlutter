@@ -13,8 +13,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  bool _isSubscribedToNewsletter = true;
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -41,6 +39,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       );
     }
+
+    final isSubscribed = user.isSubscribedNewsletter;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -133,15 +133,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: _QuickActionCard(
                     icon: Icons.shopping_bag_outlined,
                     label: 'Mis Pedidos',
-                    onTap: () => context.push('/orders'),
+                    onTap: () => context.go('/orders'),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _QuickActionCard(
-                    icon: Icons.shopping_cart_outlined,
-                    label: 'Mi Carrito',
-                    onTap: () => context.push('/cart'),
+                    icon: Icons.favorite_border,
+                    label: 'Favoritos',
+                    onTap: () => context.push('/favorites'),
                   ),
                 ),
               ],
@@ -164,13 +164,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 _ProfileOption(
                   icon: Icons.location_on_outlined,
-                  title: 'Direcciones de Envío',
-                  onTap: () {
-                    CustomSnackBar.showInfo(
-                      context,
-                      'Funcionalidad próximamente',
-                    );
-                  },
+                  title: 'Dirección de Envío',
+                  subtitle: user.address ?? 'Sin dirección configurada',
+                  onTap: () => _showEditAddressDialog(context),
                 ),
               ],
             ),
@@ -179,31 +175,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: 'Preferencias',
               children: [
                 _ProfileOption(
-                  icon: Icons.notifications_outlined,
-                  title: 'Notificaciones',
-                  trailing: Switch(
-                    value: true,
-                    onChanged: (value) {},
-                    activeTrackColor: AppTheme.primaryColor.withValues(
-                      alpha: 0.5,
-                    ),
-                    activeThumbColor: AppTheme.primaryColor,
-                  ),
-                ),
-                _ProfileOption(
                   icon: Icons.email_outlined,
                   title: 'Newsletter',
                   subtitle: 'Ofertas y novedades',
                   trailing: Switch(
-                    value: _isSubscribedToNewsletter,
-                    onChanged: (value) {
-                      setState(() => _isSubscribedToNewsletter = value);
-                      CustomSnackBar.showSuccess(
-                        context,
-                        value
-                            ? 'Suscrito a la newsletter'
-                            : 'Dado de baja de la newsletter',
-                      );
+                    value: isSubscribed,
+                    onChanged: (value) async {
+                      if (value) {
+                        final success = await ref
+                            .read(authProvider.notifier)
+                            .subscribeToNewsletter(email: user.email);
+                        if (context.mounted) {
+                          CustomSnackBar.showSuccess(
+                            context,
+                            success
+                                ? 'Suscrito a la newsletter'
+                                : 'Error al suscribirse',
+                          );
+                        }
+                      } else {
+                        if (context.mounted) {
+                          CustomSnackBar.showInfo(
+                            context,
+                            'Para darte de baja, contacta con soporte',
+                          );
+                        }
+                      }
                     },
                     activeTrackColor: AppTheme.primaryColor.withValues(
                       alpha: 0.5,
@@ -219,37 +216,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 _ProfileOption(
                   icon: Icons.help_outline,
-                  title: 'Centro de Ayuda',
-                  onTap: () {
-                    CustomSnackBar.showInfo(
-                      context,
-                      'Visita: ayuda.beniceastro.com',
-                    );
-                  },
+                  title: 'Preguntas Frecuentes',
+                  onTap: () => context.push('/faq'),
                 ),
                 _ProfileOption(
                   icon: Icons.chat_bubble_outline,
                   title: 'Contactar Soporte',
-                  onTap: () {
-                    CustomSnackBar.showInfo(
-                      context,
-                      'Email: soporte@beniceastro.com',
-                    );
-                  },
+                  onTap: () => context.push('/contact'),
                 ),
                 _ProfileOption(
                   icon: Icons.description_outlined,
                   title: 'Términos y Condiciones',
-                  onTap: () {},
+                  onTap: () => context.push('/terms'),
                 ),
                 _ProfileOption(
                   icon: Icons.privacy_tip_outlined,
                   title: 'Política de Privacidad',
-                  onTap: () {},
+                  onTap: () => context.push('/privacy'),
                 ),
               ],
             ),
             const SizedBox(height: 24),
+            // Admin panel (solo si es admin)
+            if (user.isAdmin) ...[
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.push('/admin'),
+                  icon: const Icon(Icons.admin_panel_settings),
+                  label: const Text('Panel de Administración'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             // Cerrar sesión
             SizedBox(
               width: double.infinity,
@@ -282,111 +286,360 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _showEditProfileDialog(BuildContext context) {
     final user = ref.read(authProvider).user!;
     final nameController = TextEditingController(text: user.name);
+    final fullNameController = TextEditingController(text: user.fullName ?? '');
     final phoneController = TextEditingController(text: user.phone ?? '');
+    bool isSaving = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Perfil'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre',
-                prefixIcon: Icon(Icons.person_outline),
-              ),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Editar Perfil'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre de usuario',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: fullNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre completo',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Teléfono',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Teléfono',
-                prefixIcon: Icon(Icons.phone_outlined),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      setDialogState(() => isSaving = true);
+                      final authNotifier = ref.read(authProvider.notifier);
+                      // Use the repository to update profile
+                      final result = await ref
+                          .read(authRepositoryProvider)
+                          .updateProfile(
+                            name: nameController.text.isNotEmpty
+                                ? nameController.text
+                                : null,
+                            fullName: fullNameController.text.isNotEmpty
+                                ? fullNameController.text
+                                : null,
+                            phone: phoneController.text.isNotEmpty
+                                ? phoneController.text
+                                : null,
+                          );
+                      result.fold(
+                        (failure) {
+                          if (context.mounted) {
+                            CustomSnackBar.showError(context, failure.message);
+                          }
+                        },
+                        (updatedUser) {
+                          // Refresh auth state
+                          authNotifier.login(
+                            email: updatedUser.email,
+                            password: '', // Won't re-auth, just refreshes
+                          );
+                          if (context.mounted) {
+                            CustomSnackBar.showSuccess(
+                              context,
+                              'Perfil actualizado correctamente',
+                            );
+                          }
+                        },
+                      );
+                      setDialogState(() => isSaving = false);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppTheme.borderRadiusFull,
+                  ),
+                ),
               ),
-              keyboardType: TextInputType.phone,
+              child: isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Guardar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Simular actualización
-              CustomSnackBar.showSuccess(context, 'Perfil actualizado');
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusFull),
-              ),
+      ),
+    );
+  }
+
+  void _showEditAddressDialog(BuildContext context) {
+    final user = ref.read(authProvider).user!;
+    final addressController = TextEditingController(text: user.address ?? '');
+    final cityController = TextEditingController(text: user.city ?? '');
+    final postalCodeController = TextEditingController(
+      text: user.postalCode ?? '',
+    );
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Dirección de Envío'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: addressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Dirección *',
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                    hintText: 'Calle, número, piso...',
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: cityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ciudad *',
+                    prefixIcon: Icon(Icons.location_city),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: postalCodeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Código Postal *',
+                    prefixIcon: Icon(Icons.pin_drop),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
             ),
-            child: const Text('Guardar'),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      if (addressController.text.isEmpty ||
+                          cityController.text.isEmpty ||
+                          postalCodeController.text.isEmpty) {
+                        CustomSnackBar.showError(
+                          context,
+                          'Completa todos los campos',
+                        );
+                        return;
+                      }
+                      setDialogState(() => isSaving = true);
+                      final result = await ref
+                          .read(authRepositoryProvider)
+                          .updateProfile(
+                            address: addressController.text,
+                            city: cityController.text,
+                            postalCode: postalCodeController.text,
+                          );
+                      result.fold(
+                        (failure) {
+                          if (context.mounted) {
+                            CustomSnackBar.showError(context, failure.message);
+                          }
+                        },
+                        (_) {
+                          if (context.mounted) {
+                            CustomSnackBar.showSuccess(
+                              context,
+                              'Dirección actualizada',
+                            );
+                          }
+                        },
+                      );
+                      setDialogState(() => isSaving = false);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppTheme.borderRadiusFull,
+                  ),
+                ),
+              ),
+              child: isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Guardar'),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _showChangePasswordDialog(BuildContext context) {
+    final currentPassCtrl = TextEditingController();
+    final newPassCtrl = TextEditingController();
+    final confirmPassCtrl = TextEditingController();
+    bool isSaving = false;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cambiar Contraseña'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Contraseña actual',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Cambiar Contraseña'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: currentPassCtrl,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Contraseña actual',
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: newPassCtrl,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Nueva contraseña',
+                    prefixIcon: Icon(Icons.lock_outline),
+                    helperText: 'Mínimo 6 caracteres',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmPassCtrl,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirmar nueva contraseña',
+                    prefixIcon: Icon(Icons.lock_outline),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Nueva contraseña',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirmar nueva contraseña',
-                prefixIcon: Icon(Icons.lock_outline),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      if (currentPassCtrl.text.isEmpty ||
+                          newPassCtrl.text.isEmpty) {
+                        CustomSnackBar.showError(
+                          context,
+                          'Completa todos los campos',
+                        );
+                        return;
+                      }
+                      if (newPassCtrl.text.length < 6) {
+                        CustomSnackBar.showError(
+                          context,
+                          'La contraseña debe tener al menos 6 caracteres',
+                        );
+                        return;
+                      }
+                      if (newPassCtrl.text != confirmPassCtrl.text) {
+                        CustomSnackBar.showError(
+                          context,
+                          'Las contraseñas no coinciden',
+                        );
+                        return;
+                      }
+                      setDialogState(() => isSaving = true);
+                      final result = await ref
+                          .read(authRepositoryProvider)
+                          .updatePassword(
+                            currentPassword: currentPassCtrl.text,
+                            newPassword: newPassCtrl.text,
+                          );
+                      result.fold(
+                        (failure) {
+                          if (context.mounted) {
+                            CustomSnackBar.showError(context, failure.message);
+                          }
+                        },
+                        (_) {
+                          if (context.mounted) {
+                            CustomSnackBar.showSuccess(
+                              context,
+                              'Contraseña actualizada correctamente',
+                            );
+                          }
+                        },
+                      );
+                      setDialogState(() => isSaving = false);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    AppTheme.borderRadiusFull,
+                  ),
+                ),
               ),
+              child: isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Cambiar'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              CustomSnackBar.showSuccess(context, 'Contraseña actualizada');
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusFull),
-              ),
-            ),
-            child: const Text('Cambiar'),
-          ),
-        ],
       ),
     );
   }

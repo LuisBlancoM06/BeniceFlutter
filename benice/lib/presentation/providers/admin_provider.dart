@@ -150,7 +150,7 @@ class AdminProductsNotifier extends Notifier<AdminProductsState> {
   Future<void> _loadProducts() async {
     try {
       final productRepo = ref.read(productRepositoryProvider);
-      final result = await productRepo.getProducts();
+      final result = await productRepo.getProducts(page: 1, limit: 50);
       result.fold(
         (failure) => state = AdminProductsState(error: failure.message),
         (products) => state = AdminProductsState(products: products),
@@ -301,36 +301,36 @@ class OfertasFlashNotifier extends Notifier<OfertasFlashState> {
 // ==================== PROVIDERS ====================
 
 final adminDashboardProvider =
-    NotifierProvider<AdminDashboardNotifier, AdminDashboardState>(
+    NotifierProvider.autoDispose<AdminDashboardNotifier, AdminDashboardState>(
       AdminDashboardNotifier.new,
     );
 
 final adminOrdersProvider =
-    NotifierProvider<AdminOrdersNotifier, AdminOrdersState>(
+    NotifierProvider.autoDispose<AdminOrdersNotifier, AdminOrdersState>(
       AdminOrdersNotifier.new,
     );
 
 final adminProductsProvider =
-    NotifierProvider<AdminProductsNotifier, AdminProductsState>(
+    NotifierProvider.autoDispose<AdminProductsNotifier, AdminProductsState>(
       AdminProductsNotifier.new,
     );
 
 final adminNewsletterProvider =
-    NotifierProvider<AdminNewsletterNotifier, AdminNewsletterState>(
+    NotifierProvider.autoDispose<AdminNewsletterNotifier, AdminNewsletterState>(
       AdminNewsletterNotifier.new,
     );
 
 final adminReturnsProvider =
-    NotifierProvider<AdminReturnsNotifier, AdminReturnsState>(
+    NotifierProvider.autoDispose<AdminReturnsNotifier, AdminReturnsState>(
       AdminReturnsNotifier.new,
     );
 
 final adminPromoCodesProvider =
-    NotifierProvider<AdminPromoCodesNotifier, AdminPromoCodesState>(
+    NotifierProvider.autoDispose<AdminPromoCodesNotifier, AdminPromoCodesState>(
       AdminPromoCodesNotifier.new,
     );
 
 final ofertasFlashProvider =
-    NotifierProvider<OfertasFlashNotifier, OfertasFlashState>(
+    NotifierProvider.autoDispose<OfertasFlashNotifier, OfertasFlashState>(
       OfertasFlashNotifier.new,
     );

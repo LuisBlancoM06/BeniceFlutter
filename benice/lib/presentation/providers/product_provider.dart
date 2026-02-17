@@ -41,6 +41,12 @@ class ProductsState {
 class ProductsNotifier extends Notifier<ProductsState> {
   @override
   ProductsState build() {
+    // Escuchar cambios en los filtros para recargar productos
+    ref.listen<ProductFilters>(productFiltersProvider, (previous, next) {
+      if (previous != next) {
+        _loadProducts();
+      }
+    });
     // Iniciar carga después de que build() retorne
     Future.microtask(() => _loadProducts());
     return const ProductsState(isLoading: true);
@@ -75,6 +81,12 @@ class ProductsNotifier extends Notifier<ProductsState> {
 
   Future<void> loadMore() async {
     if (state.isLoading || !state.hasMore) return;
+
+    // Limitar la lista a máximo 200 productos para evitar consumo excesivo de memoria
+    if (state.products.length >= 200) {
+      state = state.copyWith(hasMore: false);
+      return;
+    }
 
     final filters = ref.read(productFiltersProvider);
     state = state.copyWith(isLoading: true);
@@ -121,19 +133,17 @@ final productsProvider = NotifierProvider<ProductsNotifier, ProductsState>(
 );
 
 /// Provider para detalle de producto
-final productDetailProvider = FutureProvider.family<ProductEntity?, String>((
-  ref,
-  productId,
-) async {
-  final result = await ref
-      .read(productRepositoryProvider)
-      .getProductById(productId);
-  return result.fold((failure) => null, (product) => product);
-});
+final productDetailProvider = FutureProvider.autoDispose
+    .family<ProductEntity?, String>((ref, productId) async {
+      final result = await ref
+          .read(productRepositoryProvider)
+          .getProductById(productId);
+      return result.fold((failure) => null, (product) => product);
+    });
 
 /// Provider para productos relacionados
-final relatedProductsProvider =
-    FutureProvider.family<List<ProductEntity>, String>((ref, productId) async {
+final relatedProductsProvider = FutureProvider.autoDispose
+    .family<List<ProductEntity>, String>((ref, productId) async {
       final result = await ref
           .read(productRepositoryProvider)
           .getRelatedProducts(productId);
@@ -141,14 +151,13 @@ final relatedProductsProvider =
     });
 
 /// Provider para productos destacados
-final featuredProductsProvider = FutureProvider<List<ProductEntity>>((
-  ref,
-) async {
-  final result = await ref
-      .read(productRepositoryProvider)
-      .getFeaturedProducts();
-  return result.fold((failure) => [], (products) => products);
-});
+final featuredProductsProvider =
+    FutureProvider.autoDispose<List<ProductEntity>>((ref) async {
+      final result = await ref
+          .read(productRepositoryProvider)
+          .getFeaturedProducts();
+      return result.fold((failure) => [], (products) => products);
+    });
 
 /// Estado de búsqueda
 class SearchState {
@@ -220,11 +229,8 @@ final searchProvider = NotifierProvider<SearchNotifier, SearchState>(
 );
 
 /// Provider de productos por categoría
-final productsByCategoryProvider =
-    FutureProvider.family<List<ProductEntity>, ProductCategory>((
-      ref,
-      category,
-    ) async {
+final productsByCategoryProvider = FutureProvider.autoDispose
+    .family<List<ProductEntity>, ProductCategory>((ref, category) async {
       final result = await ref
           .read(productRepositoryProvider)
           .getProductsByCategory(category);
@@ -232,11 +238,8 @@ final productsByCategoryProvider =
     });
 
 /// Provider de productos por tipo de animal
-final productsByAnimalTypeProvider =
-    FutureProvider.family<List<ProductEntity>, AnimalType>((
-      ref,
-      animalType,
-    ) async {
+final productsByAnimalTypeProvider = FutureProvider.autoDispose
+    .family<List<ProductEntity>, AnimalType>((ref, animalType) async {
       final result = await ref
           .read(productRepositoryProvider)
           .getProductsByAnimalType(animalType);
@@ -244,11 +247,8 @@ final productsByAnimalTypeProvider =
     });
 
 /// Provider de productos filtrados (usado por el recomendador)
-final filteredProductsProvider =
-    FutureProvider.family<List<ProductEntity>, ProductFilters>((
-      ref,
-      filters,
-    ) async {
+final filteredProductsProvider = FutureProvider.autoDispose
+    .family<List<ProductEntity>, ProductFilters>((ref, filters) async {
       final result = await ref
           .read(productRepositoryProvider)
           .getProducts(page: 1, limit: 50, filters: filters);

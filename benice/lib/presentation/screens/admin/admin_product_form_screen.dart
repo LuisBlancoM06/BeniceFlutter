@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../providers/providers.dart';
 
 /// Pantalla para crear/editar un producto (admin)
 class AdminProductFormScreen extends ConsumerStatefulWidget {
@@ -30,8 +32,55 @@ class _AdminProductFormScreenState
   AnimalAge _animalAge = AnimalAge.adulto;
   bool _isFeatured = false;
   bool _isSaving = false;
+  bool _isLoadingProduct = false;
 
   bool get isEditing => widget.productId != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEditing) {
+      _loadProduct();
+    }
+  }
+
+  Future<void> _loadProduct() async {
+    setState(() => _isLoadingProduct = true);
+    try {
+      final productRepo = ref.read(productRepositoryProvider);
+      final result = await productRepo.getProductById(widget.productId!);
+      result.fold(
+        (failure) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: ${failure.message}')),
+            );
+          }
+        },
+        (product) {
+          _nameController.text = product.name;
+          _descController.text = product.description;
+          _priceController.text = product.price.toString();
+          if (product.discountPrice != null) {
+            _discountPriceController.text = product.discountPrice.toString();
+          }
+          _stockController.text = product.stock.toString();
+          _brandController.text = product.brand ?? '';
+          if (product.imageUrl?.isNotEmpty == true) {
+            _imageUrlController.text = product.imageUrl!;
+          }
+          _animalType = product.animalType;
+          _animalSize = product.animalSize;
+          _category = product.category;
+          _animalAge = product.animalAge;
+          _isFeatured = product.isFeatured;
+        },
+      );
+    } catch (e) {
+      debugPrint('Error cargando producto: $e');
+    }
+    if (mounted) setState(() => _isLoadingProduct = false);
+  }
 
   @override
   void dispose() {
@@ -45,226 +94,372 @@ class _AdminProductFormScreenState
     super.dispose();
   }
 
+  InputDecoration _inputDeco(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, size: 20, color: const Color(0xFF7C3AED)),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF7C3AED), width: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Editar Producto' : 'Nuevo Producto'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Nombre
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nombre del producto *',
-                  prefixIcon: Icon(Icons.label),
-                ),
-                validator: (v) => v == null || v.isEmpty ? 'Requerido' : null,
-              ),
-              const SizedBox(height: 16),
-
-              // Descripción
-              TextFormField(
-                controller: _descController,
-                decoration: const InputDecoration(
-                  labelText: 'Descripción *',
-                  prefixIcon: Icon(Icons.description),
-                ),
-                maxLines: 3,
-                validator: (v) => v == null || v.isEmpty ? 'Requerido' : null,
-              ),
-              const SizedBox(height: 16),
-
-              // Precio y Precio descuento
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _priceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Precio (€) *',
-                        prefixIcon: Icon(Icons.euro),
+      backgroundColor: const Color(0xFFF1F5F9),
+      body: _isLoadingProduct
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  expandedHeight: 120,
+                  pinned: true,
+                  backgroundColor: const Color(0xFF1E1B4B),
+                  foregroundColor: Colors.white,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
-                      keyboardType: TextInputType.number,
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Requerido';
-                        if (double.tryParse(v) == null)
-                          return 'Número inválido';
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _discountPriceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Precio oferta (€)',
-                        prefixIcon: Icon(Icons.local_offer),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Stock y Marca
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _stockController,
-                      decoration: const InputDecoration(
-                        labelText: 'Stock *',
-                        prefixIcon: Icon(Icons.inventory),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (v) {
-                        if (v == null || v.isEmpty) return 'Requerido';
-                        if (int.tryParse(v) == null) return 'Entero inválido';
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _brandController,
-                      decoration: const InputDecoration(
-                        labelText: 'Marca',
-                        prefixIcon: Icon(Icons.business),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // URL de imagen
-              TextFormField(
-                controller: _imageUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'URL de imagen',
-                  prefixIcon: Icon(Icons.image),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Clasificación
-              const Text(
-                'Clasificación',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-
-              // Tipo de animal
-              DropdownButtonFormField<AnimalType>(
-                value: _animalType,
-                decoration: const InputDecoration(labelText: 'Tipo de Animal'),
-                items: AnimalType.values
-                    .map(
-                      (t) => DropdownMenuItem(
-                        value: t,
-                        child: Text('${t.emoji} ${t.label}'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => _animalType = v!),
-              ),
-              const SizedBox(height: 12),
-
-              // Categoría
-              DropdownButtonFormField<ProductCategory>(
-                value: _category,
-                decoration: const InputDecoration(labelText: 'Categoría'),
-                items: ProductCategory.values
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c,
-                        child: Text('${c.emoji} ${c.label}'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => _category = v!),
-              ),
-              const SizedBox(height: 12),
-
-              // Tamaño
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<AnimalSize>(
-                      value: _animalSize,
-                      decoration: const InputDecoration(labelText: 'Tamaño'),
-                      items: AnimalSize.values
-                          .map(
-                            (s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(s.label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _animalSize = v!),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<AnimalAge>(
-                      value: _animalAge,
-                      decoration: const InputDecoration(labelText: 'Edad'),
-                      items: AnimalAge.values
-                          .map(
-                            (a) => DropdownMenuItem(
-                              value: a,
-                              child: Text(a.label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _animalAge = v!),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Destacado
-              SwitchListTile(
-                title: const Text('Producto Destacado'),
-                subtitle: const Text('Aparecerá en la página de inicio'),
-                value: _isFeatured,
-                onChanged: (v) => setState(() => _isFeatured = v),
-              ),
-              const SizedBox(height: 24),
-
-              // Botón guardar
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isSaving ? null : _saveProduct,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                      child: SafeArea(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(56, 8, 20, 20),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  isEditing
+                                      ? Icons.edit_rounded
+                                      : Icons.add_box_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Text(
+                                isEditing
+                                    ? 'Editar Producto'
+                                    : 'Nuevo Producto',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
                           ),
-                        )
-                      : const Icon(Icons.save),
-                  label: Text(isEditing ? 'Guardar Cambios' : 'Crear Producto'),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
+                SliverToBoxAdapter(
+                  child: Form(
+                    key: _formKey,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Información básica
+                          _SectionCard(
+                            title: 'Información Básica',
+                            icon: Icons.info_rounded,
+                            children: [
+                              TextFormField(
+                                controller: _nameController,
+                                decoration: _inputDeco(
+                                  'Nombre del producto *',
+                                  Icons.label_rounded,
+                                ),
+                                validator: (v) =>
+                                    v == null || v.isEmpty ? 'Requerido' : null,
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _descController,
+                                decoration: _inputDeco(
+                                  'Descripción *',
+                                  Icons.description_rounded,
+                                ),
+                                maxLines: 3,
+                                validator: (v) =>
+                                    v == null || v.isEmpty ? 'Requerido' : null,
+                              ),
+                              const SizedBox(height: 14),
+                              TextFormField(
+                                controller: _imageUrlController,
+                                decoration: _inputDeco(
+                                  'URL de imagen',
+                                  Icons.image_rounded,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Precio y stock
+                          _SectionCard(
+                            title: 'Precio y Stock',
+                            icon: Icons.euro_rounded,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _priceController,
+                                      decoration: _inputDeco(
+                                        'Precio (€) *',
+                                        Icons.euro_rounded,
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      validator: (v) {
+                                        if (v == null || v.isEmpty) {
+                                          return 'Requerido';
+                                        }
+                                        if (double.tryParse(v) == null) {
+                                          return 'Número inválido';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _discountPriceController,
+                                      decoration: _inputDeco(
+                                        'Precio oferta (€)',
+                                        Icons.local_offer_rounded,
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _stockController,
+                                      decoration: _inputDeco(
+                                        'Stock *',
+                                        Icons.inventory_rounded,
+                                      ),
+                                      keyboardType: TextInputType.number,
+                                      validator: (v) {
+                                        if (v == null || v.isEmpty) {
+                                          return 'Requerido';
+                                        }
+                                        if (int.tryParse(v) == null) {
+                                          return 'Entero inválido';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _brandController,
+                                      decoration: _inputDeco(
+                                        'Marca',
+                                        Icons.business_rounded,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Clasificación
+                          _SectionCard(
+                            title: 'Clasificación',
+                            icon: Icons.category_rounded,
+                            children: [
+                              DropdownButtonFormField<AnimalType>(
+                                value: _animalType,
+                                decoration: _inputDeco(
+                                  'Tipo de Animal',
+                                  Icons.pets_rounded,
+                                ),
+                                items: AnimalType.values
+                                    .map(
+                                      (t) => DropdownMenuItem(
+                                        value: t,
+                                        child: Text(t.label),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (v) =>
+                                    setState(() => _animalType = v!),
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<ProductCategory>(
+                                value: _category,
+                                decoration: _inputDeco(
+                                  'Categoría',
+                                  Icons.grid_view_rounded,
+                                ),
+                                items: ProductCategory.values
+                                    .map(
+                                      (c) => DropdownMenuItem(
+                                        value: c,
+                                        child: Text(c.label),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (v) =>
+                                    setState(() => _category = v!),
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DropdownButtonFormField<AnimalSize>(
+                                      value: _animalSize,
+                                      decoration: _inputDeco(
+                                        'Tamaño',
+                                        Icons.straighten_rounded,
+                                      ),
+                                      items: AnimalSize.values
+                                          .map(
+                                            (s) => DropdownMenuItem(
+                                              value: s,
+                                              child: Text(s.label),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (v) =>
+                                          setState(() => _animalSize = v!),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: DropdownButtonFormField<AnimalAge>(
+                                      value: _animalAge,
+                                      decoration: _inputDeco(
+                                        'Edad',
+                                        Icons.cake_rounded,
+                                      ),
+                                      items: AnimalAge.values
+                                          .map(
+                                            (a) => DropdownMenuItem(
+                                              value: a,
+                                              child: Text(a.label),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (v) =>
+                                          setState(() => _animalAge = v!),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Destacado
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text(
+                                'Producto Destacado',
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: const Text(
+                                'Aparecerá en la página de inicio',
+                              ),
+                              value: _isFeatured,
+                              onChanged: (v) => setState(() => _isFeatured = v),
+                              activeColor: const Color(0xFF7C3AED),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Botón guardar
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: FilledButton.icon(
+                              onPressed: _isSaving ? null : _saveProduct,
+                              icon: _isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.save_rounded),
+                              label: Text(
+                                isEditing
+                                    ? 'Guardar Cambios'
+                                    : 'Crear Producto',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFF7C3AED),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -272,16 +467,114 @@ class _AdminProductFormScreenState
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simular guardado
+
+    final data = {
+      'name': _nameController.text,
+      'description': _descController.text,
+      'price': double.parse(_priceController.text),
+      'discount_price': _discountPriceController.text.isNotEmpty
+          ? double.parse(_discountPriceController.text)
+          : null,
+      'stock': int.parse(_stockController.text),
+      'brand': _brandController.text.isNotEmpty
+          ? _brandController.text
+          : 'BeniceAstro',
+      'image_url': _imageUrlController.text,
+      'animal_type': _animalType.name,
+      'animal_size': _animalSize.name,
+      'category': _category.name,
+      'animal_age': _animalAge.name,
+      'is_featured': _isFeatured,
+    };
+
+    final adminRepo = ref.read(adminRepositoryProvider);
+
+    final result = isEditing
+        ? await adminRepo.updateProduct(widget.productId!, data)
+        : await adminRepo.createProduct(data);
 
     if (mounted) {
       setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isEditing ? 'Producto actualizado' : 'Producto creado'),
-        ),
+      result.fold(
+        (failure) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: ${failure.message}')));
+        },
+        (_) {
+          ref.read(adminProductsProvider.notifier).refresh();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isEditing ? 'Producto actualizado' : 'Producto creado',
+              ),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+          Navigator.of(context).pop();
+        },
       );
-      Navigator.of(context).pop();
     }
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEDE9FE),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 18, color: const Color(0xFF7C3AED)),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...children,
+        ],
+      ),
+    );
   }
 }

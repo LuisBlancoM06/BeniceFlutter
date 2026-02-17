@@ -184,7 +184,7 @@ class ProductModel extends ProductEntity {
       'on_sale': onSale,
       'image_url': imageUrl ?? mainImage,
       'images': images,
-      'brand': brand ?? 'Venice',
+      'brand': brand ?? 'BeniceAstro',
       'animal_type': animalType.name,
       'size': animalSize.name,
       'category': category.name,

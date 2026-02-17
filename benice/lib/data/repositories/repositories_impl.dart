@@ -460,7 +460,11 @@ class CartRepositoryImpl implements CartRepository {
         newItems = [..._cart.items, newItem];
       }
 
-      _cart = _cart.copyWith(items: newItems) as CartModel;
+      _cart = CartModel(
+        items: newItems,
+        discountCode: _cart.discountCode,
+        discountPercent: _cart.discountPercent,
+      );
       await _saveCart();
 
       return Right(_cart);
@@ -486,7 +490,11 @@ class CartRepositoryImpl implements CartRepository {
         return item;
       }).toList();
 
-      _cart = _cart.copyWith(items: newItems) as CartModel;
+      _cart = CartModel(
+        items: newItems,
+        discountCode: _cart.discountCode,
+        discountPercent: _cart.discountPercent,
+      );
       await _saveCart();
 
       return Right(_cart);
@@ -499,7 +507,11 @@ class CartRepositoryImpl implements CartRepository {
   ResultFuture<CartEntity> removeFromCart(String itemId) async {
     try {
       final newItems = _cart.items.where((item) => item.id != itemId).toList();
-      _cart = _cart.copyWith(items: newItems) as CartModel;
+      _cart = CartModel(
+        items: newItems,
+        discountCode: _cart.discountCode,
+        discountPercent: _cart.discountPercent,
+      );
       await _saveCart();
 
       return Right(_cart);

@@ -4,7 +4,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/entities.dart';
 
-/// Tarjeta de pedido
+/// Tarjeta de pedido — diseño moderno
 class OrderCard extends StatelessWidget {
   final OrderEntity order;
   final VoidCallback? onTap;
@@ -21,156 +21,280 @@ class OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusMd),
-          boxShadow: AppTheme.cardShadow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final statusColor = order.status.color;
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(left: BorderSide(color: statusColor, width: 4)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Header: nº pedido + badge de estado
+                Row(
                   children: [
-                    Text(
-                      'Pedido #${order.id.substring(order.id.length - 8)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    // Icono de pedido
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        order.status.icon,
+                        size: 20,
+                        color: statusColor,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat(
-                        'dd MMM yyyy, HH:mm',
-                        'es',
-                      ).format(order.createdAt),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Pedido #${order.id.substring(order.id.length - 8)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              color: AppTheme.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.schedule,
+                                size: 12,
+                                color: AppTheme.textLight,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                DateFormat(
+                                  'dd MMM yyyy, HH:mm',
+                                  'es',
+                                ).format(order.createdAt),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
+                    OrderStatusBadge(status: order.status),
                   ],
                 ),
-                OrderStatusBadge(status: order.status),
-              ],
-            ),
-            const Divider(height: 24),
-            // Items preview
-            ...order.items
-                .take(2)
-                .map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Text(
-                          '${item.quantity}x',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.textSecondary,
+                const SizedBox(height: 14),
+
+                // Productos
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      ...order.items
+                          .take(3)
+                          .map(
+                            (item) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 3),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryColor.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '${item.quantity}x',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 11,
+                                        color: AppTheme.primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      item.productName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${item.total.toStringAsFixed(2)}€',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
+                      if (order.items.length > 3)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.more_horiz,
+                                size: 16,
+                                color: AppTheme.primaryColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '+${order.items.length - 3} productos más',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Footer: Total + acción
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        // Acciones rápidas
+                        if (order.canCancel && onCancel != null)
+                          _ActionChip(
+                            label: 'Cancelar',
+                            color: AppTheme.errorColor,
+                            onTap: onCancel!,
+                          ),
+                        if (order.canRequestReturn && onRequestReturn != null)
+                          _ActionChip(
+                            label: 'Devolución',
+                            color: AppTheme.warningColor,
+                            onTap: onRequestReturn!,
+                          ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            const Text(
+                              'Total',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                            Text(
+                              '${order.total.toStringAsFixed(2)}€',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            item.productName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ),
-                        Text(
-                          '${item.total.toStringAsFixed(2)}€',
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+                          child: const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 14,
+                            color: AppTheme.primaryColor,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-            if (order.items.length > 2)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '+${order.items.length - 2} productos más',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-              ),
-            const Divider(height: 24),
-            // Total y acciones
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Total',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondary,
-                      ),
-                    ),
-                    Text(
-                      '${order.total.toStringAsFixed(2)}€',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    // Botón cancelar (solo si está pagado)
-                    if (order.canCancel && onCancel != null)
-                      OutlinedButton(
-                        onPressed: onCancel,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.errorColor,
-                          side: const BorderSide(color: AppTheme.errorColor),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                        ),
-                        child: const Text('Cancelar'),
-                      ),
-                    // Botón devolución (solo si está entregado)
-                    if (order.canRequestReturn && onRequestReturn != null) ...[
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        onPressed: onRequestReturn,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                        ),
-                        child: const Text('Devolución'),
-                      ),
-                    ],
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.chevron_right,
-                      color: AppTheme.textSecondary,
-                    ),
                   ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Badge de estado del pedido
+/// Chip de acción rápida para cancelar/devolver
+class _ActionChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionChip({
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Badge de estado del pedido — diseño pill moderno
 class OrderStatusBadge extends StatelessWidget {
   final OrderStatus status;
 
@@ -178,23 +302,31 @@ class OrderStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = Color(status.colorValue);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: Color(status.colorValue).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLg),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(status.emoji, style: const TextStyle(fontSize: 12)),
-          const SizedBox(width: 4),
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
           Text(
             status.label,
             style: TextStyle(
-              color: Color(status.colorValue),
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -258,10 +390,10 @@ class ReturnInfoBottomSheet extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             // Información
-            const _InfoSection(
+            _InfoSection(
               icon: Icons.location_on_outlined,
               title: 'Dirección de envío',
-              content: 'Calle Ejemplo 123, 28001 Madrid',
+              content: AppConstants.warehouseAddress,
             ),
             const SizedBox(height: 16),
             const _InfoSection(

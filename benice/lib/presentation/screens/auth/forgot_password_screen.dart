@@ -198,7 +198,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ),
             shape: BoxShape.circle,
             boxShadow: [
-              BoxShadow(color: Colors.green.withOpacity(0.3), blurRadius: 16),
+              BoxShadow(
+                color: Colors.green.withValues(alpha: 0.3),
+                blurRadius: 16,
+              ),
             ],
           ),
           child: const Icon(

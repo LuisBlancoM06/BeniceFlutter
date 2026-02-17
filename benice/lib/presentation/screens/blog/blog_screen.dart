@@ -47,7 +47,7 @@ class BlogScreen extends StatelessWidget {
                   'Consejos, guías y todo lo que necesitas saber para cuidar a tus mascotas',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -199,7 +199,7 @@ class _BlogArticleCard extends StatelessWidget {
                     Image.network(
                       imageUrl,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         color: Colors.grey[200],
                         child: const Icon(
                           Icons.image,
@@ -348,7 +348,7 @@ class _BlogArticleCard extends StatelessWidget {
               child: Image.network(
                 imageUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   color: Colors.grey[200],
                   child: const Icon(Icons.image, color: Colors.grey),
                 ),
@@ -366,7 +366,7 @@ class _BlogArticleCard extends StatelessWidget {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: categoryColor.withOpacity(0.1),
+                        color: categoryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(

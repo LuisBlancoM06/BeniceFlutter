@@ -41,7 +41,7 @@ class ProductFilterBar extends StatelessWidget {
               label: 'Animal',
               value: filters.animalType,
               items: AnimalType.values,
-              itemLabel: (e) => '${e.emoji} ${e.label}',
+              itemLabel: (e) => e.label,
               onChanged: (value) {
                 if (value == filters.animalType) {
                   onFiltersChanged(filters.copyWith(clearAnimalType: true));
@@ -56,7 +56,7 @@ class ProductFilterBar extends StatelessWidget {
               label: 'Categoría',
               value: filters.category,
               items: ProductCategory.values,
-              itemLabel: (e) => '${e.emoji} ${e.label}',
+              itemLabel: (e) => e.label,
               onChanged: (value) {
                 if (value == filters.category) {
                   onFiltersChanged(filters.copyWith(clearCategory: true));
@@ -271,7 +271,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                       title: 'Tipo de Animal',
                       children: AnimalType.values.map((type) {
                         return _FilterChip(
-                          label: '${type.emoji} ${type.label}',
+                          label: type.label,
                           isSelected: _filters.animalType == type,
                           onTap: () => setState(() {
                             _filters = _filters.animalType == type
@@ -287,7 +287,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                       title: 'Categoría',
                       children: ProductCategory.values.map((cat) {
                         return _FilterChip(
-                          label: '${cat.emoji} ${cat.label}',
+                          label: cat.label,
                           isSelected: _filters.category == cat,
                           onTap: () => setState(() {
                             _filters = _filters.category == cat
@@ -337,7 +337,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                       title: 'Opciones',
                       children: [
                         _FilterChip(
-                          label: '🏷️ Con descuento',
+                          label: 'Con descuento',
                           isSelected: _filters.onlyWithDiscount == true,
                           onTap: () => setState(() {
                             _filters = _filters.copyWith(
@@ -349,7 +349,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                           }),
                         ),
                         _FilterChip(
-                          label: '✅ En stock',
+                          label: 'En stock',
                           isSelected: _filters.onlyInStock == true,
                           onTap: () => setState(() {
                             _filters = _filters.copyWith(

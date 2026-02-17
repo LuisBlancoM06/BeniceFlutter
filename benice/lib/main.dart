@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,9 +8,14 @@ import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/providers/repository_providers.dart';
 import 'presentation/router.dart';
+import 'presentation/widgets/common/cookie_consent_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Limitar la caché de imágenes en memoria (máx 30 imágenes, 50MB)
+  PaintingBinding.instance.imageCache.maximumSize = 30;
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 50 << 20; // 50 MB
 
   // Inicializar Supabase
   await Supabase.initialize(
@@ -22,6 +28,14 @@ void main() async {
 
   // Inicializar SharedPreferences
   final prefs = await SharedPreferences.getInstance();
+
+  // Configurar estilo de la barra de estado
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+  );
 
   runApp(
     ProviderScope(
@@ -44,12 +58,21 @@ class BeniceAstroApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       routerConfig: router,
       builder: (context, child) {
-        // Ajustar el factor de escala del texto si es necesario
         return MediaQuery(
           data: MediaQuery.of(
             context,
           ).copyWith(textScaler: TextScaler.noScaling),
-          child: child!,
+          child: Stack(
+            children: [
+              child!,
+              const Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: CookieConsentBanner(),
+              ),
+            ],
+          ),
         );
       },
     );

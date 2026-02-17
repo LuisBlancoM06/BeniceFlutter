@@ -183,18 +183,23 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                         return const ProductCardShimmer();
                       }
                       final product = productsState.products[index];
-                      return ProductCard(
-                        product: product,
-                        onTap: () => context.push('/product/${product.id}'),
-                        onAddToCart: () {
-                          ref.read(cartProvider.notifier).addToCart(product);
-                          CustomSnackBar.showSuccess(
-                            context,
-                            '${product.name} añadido al carrito',
-                          );
-                        },
+                      return RepaintBoundary(
+                        child: ProductCard(
+                          product: product,
+                          onTap: () => context.push('/product/${product.id}'),
+                          onAddToCart: () {
+                            ref.read(cartProvider.notifier).addToCart(product);
+                            CustomSnackBar.showSuccess(
+                              context,
+                              '${product.name} añadido al carrito',
+                            );
+                          },
+                        ),
                       );
                     },
+                    addAutomaticKeepAlives: false,
+                    addRepaintBoundaries:
+                        false, // we add manual RepaintBoundary
                     childCount:
                         productsState.products.length +
                         (productsState.isLoading ? 2 : 0),

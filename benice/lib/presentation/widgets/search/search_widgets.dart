@@ -19,6 +19,8 @@ class SearchResultItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: CachedNetworkImage(
           imageUrl: product.mainImage,
+          memCacheWidth: 100,
+          memCacheHeight: 100,
           width: 50,
           height: 50,
           fit: BoxFit.cover,

@@ -20,6 +20,7 @@ export 'blog/blog_detail_screen.dart';
 export 'cart/cart_screen.dart';
 export 'cart/checkout_screen.dart';
 export 'cart/checkout_success_screen.dart';
+export 'cart/checkout_cancel_screen.dart';
 
 // Orders
 export 'orders/orders_screen.dart';
@@ -53,4 +54,6 @@ export 'admin/admin_product_form_screen.dart';
 export 'admin/admin_ofertas_screen.dart';
 export 'admin/admin_newsletter_screen.dart';
 export 'admin/admin_returns_screen.dart';
+export 'admin/admin_invoices_screen.dart';
+export 'admin/admin_visits_screen.dart';
 export 'admin/admin_settings_screen.dart';

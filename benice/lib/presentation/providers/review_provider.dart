@@ -54,31 +54,32 @@ ReviewStats _calculateStats(List<ReviewEntity> reviews) {
 
 // ==================== GLOBAL REVIEWS STORE ====================
 
-/// Store centralizado de reviews (gestiona reviews de todos los productos)
+/// Store centralizado de reviews con límite de caché
 class ReviewsStore extends Notifier<Map<String, List<ReviewEntity>>> {
+  static const _maxCachedProducts = 10;
+
   @override
   Map<String, List<ReviewEntity>> build() {
     return {};
   }
 
-  List<ReviewEntity> getReviews(String productId) {
-    if (!state.containsKey(productId)) {
-      // Trigger async load from Supabase
-      _loadFromRepo(productId);
-    }
-    return state[productId] ?? [];
-  }
-
-  Future<void> _loadFromRepo(String productId) async {
+  Future<void> loadReviews(String productId) async {
+    if (state.containsKey(productId)) return;
     final reviewRepo = ref.read(reviewRepositoryProvider);
     final result = await reviewRepo.getProductReviews(productId);
     result.fold((_) => null, (reviews) {
-      state = {...state, productId: reviews};
+      final newState = Map<String, List<ReviewEntity>>.from(state);
+      // Limitar caché: eliminar la entrada más antigua si excede el límite
+      if (newState.length >= _maxCachedProducts) {
+        newState.remove(newState.keys.first);
+      }
+      newState[productId] = reviews;
+      state = newState;
     });
   }
 
   void addReview(String productId, ReviewEntity review) {
-    final currentReviews = getReviews(productId);
+    final currentReviews = state[productId] ?? [];
     state = {
       ...state,
       productId: [review, ...currentReviews],
@@ -86,7 +87,7 @@ class ReviewsStore extends Notifier<Map<String, List<ReviewEntity>>> {
   }
 
   void deleteReview(String productId, String reviewId) {
-    final currentReviews = getReviews(productId);
+    final currentReviews = state[productId] ?? [];
     state = {
       ...state,
       productId: currentReviews.where((r) => r.id != reviewId).toList(),
@@ -103,15 +104,12 @@ final _reviewsStoreProvider =
 
 /// Provider de estado de reviews para un producto específico
 final reviewsProvider = Provider.family<ReviewsState, String>((ref, productId) {
-  // Watch the store to get reactive updates
   final store = ref.watch(_reviewsStoreProvider);
   final reviews = store[productId] ?? [];
 
-  // Si no hay reviews cargadas aún, inicializar
   if (!store.containsKey(productId)) {
-    // Trigger load
     Future.microtask(() {
-      ref.read(_reviewsStoreProvider.notifier).getReviews(productId);
+      ref.read(_reviewsStoreProvider.notifier).loadReviews(productId);
     });
     return const ReviewsState(isLoading: true);
   }

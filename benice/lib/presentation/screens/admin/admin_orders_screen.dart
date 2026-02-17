@@ -7,6 +7,20 @@ import '../../providers/providers.dart';
 class AdminOrdersScreen extends ConsumerWidget {
   const AdminOrdersScreen({super.key});
 
+  static const _statusFilters = [
+    (null, 'Todos', Icons.list_alt_rounded, Color(0xFF64748B)),
+    (
+      'pendiente',
+      'Pendiente',
+      Icons.hourglass_empty_rounded,
+      Color(0xFFFFA726),
+    ),
+    ('pagado', 'Pagado', Icons.credit_card_rounded, Color(0xFF42A5F5)),
+    ('enviado', 'Enviado', Icons.local_shipping_rounded, Color(0xFF7E57C2)),
+    ('entregado', 'Entregado', Icons.check_circle_rounded, Color(0xFF66BB6A)),
+    ('cancelado', 'Cancelado', Icons.cancel_rounded, Color(0xFFEF5350)),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ordersState = ref.watch(adminOrdersProvider);
@@ -14,198 +28,447 @@ class AdminOrdersScreen extends ConsumerWidget {
     return DefaultTabController(
       length: 6,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Gestión de Pedidos'),
-          bottom: TabBar(
-            isScrollable: true,
-            onTap: (index) {
-              final statuses = [
-                null,
-                'pendiente',
-                'pagado',
-                'enviado',
-                'entregado',
-                'cancelado',
-              ];
-              ref
-                  .read(adminOrdersProvider.notifier)
-                  .filterByStatus(statuses[index]);
-            },
-            tabs: const [
-              Tab(text: 'Todos'),
-              Tab(text: '⏳ Pendiente'),
-              Tab(text: '💳 Pagado'),
-              Tab(text: '📦 Enviado'),
-              Tab(text: '✅ Entregado'),
-              Tab(text: '❌ Cancelado'),
-            ],
-          ),
-        ),
-        body: ordersState.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : ordersState.orders.isEmpty
-            ? const Center(child: Text('No hay pedidos'))
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: ordersState.orders.length,
-                itemBuilder: (context, index) {
-                  final order = ordersState.orders[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ExpansionTile(
-                      leading: CircleAvatar(
-                        backgroundColor: order.status.color.withValues(
-                          alpha: 0.2,
-                        ),
-                        child: Text(order.status.emoji),
-                      ),
-                      title: Text(
-                        order.orderNumber,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+        backgroundColor: const Color(0xFFF1F5F9),
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverAppBar(
+              expandedHeight: 130,
+              pinned: true,
+              backgroundColor: const Color(0xFF1E1B4B),
+              foregroundColor: Colors.white,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(56, 8, 20, 50),
+                      child: Row(
                         children: [
-                          Text(
-                            '${order.total.toStringAsFixed(2)}€ · ${order.items.length} items',
-                          ),
-                          Text(
-                            order.status.label,
-                            style: TextStyle(
-                              color: order.status.color,
-                              fontWeight: FontWeight.w600,
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.receipt_long_rounded,
+                              color: Colors.white,
+                              size: 22,
                             ),
                           ),
-                        ],
-                      ),
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
+                          const SizedBox(width: 14),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Items del pedido
-                              ...order.items.map(
-                                (item) => Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 4,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        '${item.quantity}x ',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Expanded(child: Text(item.productName)),
-                                      Text(
-                                        '${item.totalPrice.toStringAsFixed(2)}€',
-                                      ),
-                                    ],
-                                  ),
+                              const Text(
+                                'Gestión de Pedidos',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.5,
                                 ),
                               ),
-                              const Divider(),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    'Total:',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${order.total.toStringAsFixed(2)}€',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
                               Text(
-                                'Dirección: ${order.shippingAddress}',
+                                '${ordersState.orders.length} pedidos',
                                 style: const TextStyle(
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                              if (order.notes != null)
-                                Text(
-                                  'Notas: ${order.notes}',
-                                  style: const TextStyle(
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                              const SizedBox(height: 12),
-                              // Botones de acción
-                              Wrap(
-                                spacing: 8,
-                                children: _buildActionButtons(
-                                  context,
-                                  ref,
-                                  order,
+                                  color: Color(0xFFA5B4FC),
+                                  fontSize: 13,
                                 ),
                               ),
                             ],
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(52),
+                child: Container(
+                  color: const Color(0xFF1E1B4B),
+                  child: TabBar(
+                    isScrollable: true,
+                    indicatorColor: Colors.white,
+                    indicatorWeight: 3,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white54,
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                    tabAlignment: TabAlignment.start,
+                    onTap: (index) {
+                      ref
+                          .read(adminOrdersProvider.notifier)
+                          .filterByStatus(_statusFilters[index].$1);
+                    },
+                    tabs: _statusFilters
+                        .map(
+                          (s) => Tab(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(s.$3, size: 16),
+                                const SizedBox(width: 6),
+                                Text(s.$2),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+            ),
+          ],
+          body: ordersState.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ordersState.orders.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0E7FF),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.inbox_rounded,
+                          size: 48,
+                          color: Color(0xFF6366F1),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No hay pedidos',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Los pedidos aparecerán aquí',
+                        style: TextStyle(color: AppTheme.textSecondary),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: ordersState.orders.length,
+                  itemBuilder: (context, index) {
+                    final order = ordersState.orders[index];
+                    return _OrderCard(order: order);
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderCard extends ConsumerWidget {
+  final dynamic order;
+  const _OrderCard({required this.order});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final Color statusColor = order.status.color;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: EdgeInsets.zero,
+          leading: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(order.status.icon, color: statusColor, size: 20),
+          ),
+          title: Text(
+            order.orderNumber,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 15,
+              letterSpacing: -0.3,
+            ),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              children: [
+                Text(
+                  '${order.total.toStringAsFixed(2)}€',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    order.status.label,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${order.items.length} items',
+                  style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          children: [
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...order.items.map<Widget>(
+                    (item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEDE9FE),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${item.quantity}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12,
+                                  color: Color(0xFF7C3AED),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              item.productName,
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          Text(
+                            '${item.totalPrice.toStringAsFixed(2)}€',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(height: 1),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7C3AED),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '${order.total.toStringAsFixed(2)}€',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (order.shippingAddress.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 14,
+                          color: AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            order.shippingAddress,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  );
-                },
+                  ],
+                  if (order.notes != null) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.notes_rounded,
+                          size: 14,
+                          color: AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            order.notes!,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  _buildActionButtons(ref, order),
+                ],
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  List<Widget> _buildActionButtons(
-    BuildContext context,
-    WidgetRef ref,
-    dynamic order,
-  ) {
-    final buttons = <Widget>[];
+  Widget _buildActionButtons(WidgetRef ref, dynamic order) {
     final notifier = ref.read(adminOrdersProvider.notifier);
+    Widget? button;
 
     if (order.status == OrderStatus.pendiente) {
-      buttons.add(
-        ElevatedButton.icon(
-          icon: const Icon(Icons.payment, size: 16),
-          label: const Text('Marcar Pagado'),
-          onPressed: () => notifier.updateOrderStatus(order.id, 'pagado'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF42A5F5),
-          ),
-        ),
+      button = _ActionButton(
+        label: 'Marcar Pagado',
+        icon: Icons.credit_card_rounded,
+        color: const Color(0xFF42A5F5),
+        onPressed: () => notifier.updateOrderStatus(order.id, 'pagado'),
+      );
+    } else if (order.status == OrderStatus.pagado) {
+      button = _ActionButton(
+        label: 'Marcar Enviado',
+        icon: Icons.local_shipping_rounded,
+        color: const Color(0xFF7E57C2),
+        onPressed: () => notifier.updateOrderStatus(order.id, 'enviado'),
+      );
+    } else if (order.status == OrderStatus.enviado) {
+      button = _ActionButton(
+        label: 'Marcar Entregado',
+        icon: Icons.check_circle_rounded,
+        color: const Color(0xFF66BB6A),
+        onPressed: () => notifier.updateOrderStatus(order.id, 'entregado'),
       );
     }
-    if (order.status == OrderStatus.pagado) {
-      buttons.add(
-        ElevatedButton.icon(
-          icon: const Icon(Icons.local_shipping, size: 16),
-          label: const Text('Marcar Enviado'),
-          onPressed: () => notifier.updateOrderStatus(order.id, 'enviado'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF7E57C2),
+
+    return button ?? const SizedBox.shrink();
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onPressed;
+
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: FilledButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
-      );
-    }
-    if (order.status == OrderStatus.enviado) {
-      buttons.add(
-        ElevatedButton.icon(
-          icon: const Icon(Icons.check_circle, size: 16),
-          label: const Text('Marcar Entregado'),
-          onPressed: () => notifier.updateOrderStatus(order.id, 'entregado'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.successColor,
-          ),
-        ),
-      );
-    }
-    return buttons;
+      ),
+    );
   }
 }

@@ -38,7 +38,7 @@ class AuthState {
 class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
-    _checkAuthStatus();
+    Future.microtask(() => _checkAuthStatus());
     return const AuthState();
   }
 

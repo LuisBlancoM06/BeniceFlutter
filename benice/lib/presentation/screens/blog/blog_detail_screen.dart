@@ -28,7 +28,7 @@ class BlogDetailScreen extends StatelessWidget {
                   Image.network(
                     article['image'] as String,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
+                    errorBuilder: (_, _, _) =>
                         Container(color: Colors.grey[300]),
                   ),
                   Container(
@@ -38,7 +38,7 @@ class BlogDetailScreen extends StatelessWidget {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.7),
+                          Colors.black.withValues(alpha: 0.7),
                         ],
                       ),
                     ),
@@ -352,7 +352,7 @@ class _RelatedArticle extends StatelessWidget {
                 height: 120,
                 width: 160,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
+                errorBuilder: (_, _, _) =>
                     Container(height: 120, width: 160, color: Colors.grey[200]),
               ),
             ),

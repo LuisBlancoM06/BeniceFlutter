@@ -73,7 +73,7 @@ class _OfertasScreenState extends ConsumerState<OfertasScreen> {
                     children: [
                       const SizedBox(height: 40),
                       const Text(
-                        '🔥 OFERTAS FLASH 🔥',
+                        'OFERTAS FLASH',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,

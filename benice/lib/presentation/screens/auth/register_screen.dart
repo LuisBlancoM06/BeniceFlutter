@@ -111,7 +111,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.purple.withOpacity(0.3),
+                        color: Colors.purple.withValues(alpha: 0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -192,8 +192,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                             ),
                         validator: (v) {
-                          if (v == null || v.isEmpty)
+                          if (v == null || v.isEmpty) {
                             return 'Ingresa una contraseña';
+                          }
                           if (v.length < 6) return 'Mínimo 6 caracteres';
                           return null;
                         },
@@ -221,8 +222,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                             ),
                         validator: (v) {
-                          if (v != _passwordController.text)
+                          if (v != _passwordController.text) {
                             return 'Las contraseñas no coinciden';
+                          }
                           return null;
                         },
                       ),

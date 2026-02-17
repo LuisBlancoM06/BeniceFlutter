@@ -17,168 +17,433 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     final promoState = ref.watch(adminPromoCodesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajustes')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Info de la tienda
-            _buildSection(
-              title: 'Información de la Tienda',
-              icon: Icons.store,
-              children: [
-                _buildInfoRow('Nombre', 'BeniceAstro'),
-                _buildInfoRow('Email', 'info@benice.com'),
-                _buildInfoRow('Teléfono', '+34 600 000 000'),
-                _buildInfoRow('Envío gratis', 'Pedidos > 49€'),
-                _buildInfoRow('Coste envío', '4.99€'),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Códigos promocionales
-            _buildSection(
-              title: 'Códigos Promocionales',
-              icon: Icons.confirmation_number,
-              trailing: IconButton(
-                icon: const Icon(
-                  Icons.add_circle,
-                  color: AppTheme.primaryColor,
+      backgroundColor: const Color(0xFFF1F5F9),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 130,
+            pinned: true,
+            backgroundColor: const Color(0xFF1E293B),
+            foregroundColor: Colors.white,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1E293B), Color(0xFF475569)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-                onPressed: () => _showCreatePromoDialog(context),
-              ),
-              children: [
-                if (promoState.isLoading)
-                  const Center(child: CircularProgressIndicator())
-                else if (promoState.codes.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'No hay códigos',
-                      style: TextStyle(color: AppTheme.textSecondary),
-                    ),
-                  )
-                else
-                  ...promoState.codes.map(
-                    (code) => ListTile(
-                      dense: true,
-                      title: Text(
-                        code.code,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -30,
+                      top: -30,
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.05),
                         ),
                       ),
-                      subtitle: Text(
-                        '${code.discountPercent.toStringAsFixed(0)}% descuento${code.isValid ? '' : ' (inactivo)'}',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            code.isValid ? Icons.check_circle : Icons.cancel,
-                            color: code.isValid
-                                ? AppTheme.successColor
-                                : AppTheme.errorColor,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: AppTheme.errorColor,
+                    ),
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(56, 8, 20, 20),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.settings_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
                             ),
-                            onPressed: () => ref
-                                .read(adminPromoCodesProvider.notifier)
-                                .deleteCode(code.code),
+                            const SizedBox(width: 14),
+                            const Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Ajustes',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                Text(
+                                  'Configuración de la tienda',
+                                  style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Info de la tienda
+                  _sectionTitle(
+                    'Información de la Tienda',
+                    Icons.store_rounded,
+                  ),
+                  const SizedBox(height: 12),
+                  _SectionCard(
+                    children: [
+                      _InfoRow(label: 'Nombre', value: 'BeniceAstro'),
+                      _InfoRow(label: 'Email', value: 'info@benice.com'),
+                      _InfoRow(label: 'Teléfono', value: '+34 600 000 000'),
+                      _InfoRow(label: 'Envío gratis', value: 'Pedidos > 49€'),
+                      _InfoRow(
+                        label: 'Coste envío',
+                        value: '4.99€',
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Códigos promocionales
+                  Row(
+                    children: [
+                      _sectionTitle(
+                        'Códigos Promocionales',
+                        Icons.confirmation_number_rounded,
+                      ),
+                      const Spacer(),
+                      Material(
+                        color: const Color(0xFF6366F1),
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () => _showCreatePromoDialog(context),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.add_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Nuevo',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: promoState.isLoading
+                        ? const Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        : promoState.codes.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.confirmation_number_outlined,
+                                      color: Color(0xFF94A3B8),
+                                      size: 28,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'No hay códigos',
+                                    style: TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : Column(
+                            children: promoState.codes.asMap().entries.map((
+                              entry,
+                            ) {
+                              final idx = entry.key;
+                              final code = entry.value;
+                              final isLast = idx == promoState.codes.length - 1;
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: isLast
+                                      ? null
+                                      : const Border(
+                                          bottom: BorderSide(
+                                            color: Color(0xFFF1F5F9),
+                                          ),
+                                        ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: code.isValid
+                                            ? const Color(0xFFD1FAE5)
+                                            : const Color(0xFFFEE2E2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        code.code,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontFamily: 'monospace',
+                                          fontSize: 13,
+                                          color: code.isValid
+                                              ? const Color(0xFF059669)
+                                              : const Color(0xFFDC2626),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            '${code.discountPercent.toStringAsFixed(0)}% descuento',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                          Text(
+                                            code.isValid
+                                                ? 'Activo'
+                                                : 'Inactivo',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: code.isValid
+                                                  ? AppTheme.successColor
+                                                  : AppTheme.errorColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFFFEE2E2,
+                                        ),
+                                        foregroundColor: const Color(
+                                          0xFFDC2626,
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 18,
+                                      ),
+                                      onPressed: () => ref
+                                          .read(
+                                            adminPromoCodesProvider.notifier,
+                                          )
+                                          .deleteCode(code.code),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Zona peligrosa
+                  _sectionTitle(
+                    'Zona Peligrosa',
+                    Icons.warning_rounded,
+                    iconColor: const Color(0xFFDC2626),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFFCA5A5).withValues(alpha: 0.5),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Caché limpiado correctamente',
+                              ),
+                              backgroundColor: AppTheme.successColor,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF3C7),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.cached_rounded,
+                                  color: Color(0xFFF59E0B),
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Limpiar caché',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Limpia datos locales de la app',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Zona peligrosa
-            _buildSection(
-              title: '⚠️ Zona Peligrosa',
-              icon: Icons.warning,
-              iconColor: AppTheme.errorColor,
-              children: [
-                ListTile(
-                  leading: const Icon(
-                    Icons.cached,
-                    color: AppTheme.warningColor,
-                  ),
-                  title: const Text('Limpiar caché'),
-                  subtitle: const Text('Limpia datos locales de la app'),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Caché limpiado')),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection({
-    required String title,
-    required IconData icon,
-    Color? iconColor,
-    Widget? trailing,
-    required List<Widget> children,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.borderRadiusMd),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(icon, color: iconColor ?? AppTheme.primaryColor),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const Spacer(),
-                if (trailing != null) trailing,
-              ],
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
-          const Divider(height: 1),
-          ...children,
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
-      ),
+  Widget _sectionTitle(String title, IconData icon, {Color? iconColor}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: (iconColor ?? const Color(0xFF6366F1)).withValues(
+              alpha: 0.1,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 18,
+            color: iconColor ?? const Color(0xFF6366F1),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
+          ),
+        ),
+      ],
     );
   }
 
@@ -188,30 +453,99 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Nuevo Código Promo'),
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0E7FF),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.confirmation_number_rounded,
+                color: Color(0xFF6366F1),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Nuevo Código',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: codeController,
-              decoration: const InputDecoration(labelText: 'Código'),
               textCapitalization: TextCapitalization.characters,
+              decoration: InputDecoration(
+                labelText: 'Código',
+                hintText: 'Ej. VERANO20',
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF6366F1),
+                    width: 2,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             TextField(
               controller: percentController,
-              decoration: const InputDecoration(labelText: '% Descuento'),
               keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: '% Descuento',
+                hintText: 'Ej. 15',
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF6366F1),
+                    width: 2,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
             onPressed: () {
               final code = codeController.text.trim();
               final percent = double.tryParse(percentController.text) ?? 0;
@@ -219,10 +553,73 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 ref
                     .read(adminPromoCodesProvider.notifier)
                     .createCode(code, percent);
-                Navigator.pop(context);
+                Navigator.pop(ctx);
               }
             },
-            child: const Text('Crear'),
+            child: const Text('Crear Código'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final List<Widget> children;
+  const _SectionCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(children: children),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isLast;
+
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : const Border(
+                bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1),
+              ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ],
       ),

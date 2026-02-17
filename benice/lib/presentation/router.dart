@@ -7,8 +7,21 @@ import 'providers/providers.dart';
 import 'screens/screens.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: '/',
+    redirect: (context, state) {
+      final path = state.uri.path;
+      if (path.startsWith('/admin')) {
+        final authState = ref.read(authProvider);
+        if (!authState.isAuthenticated || authState.user == null) {
+          return '/login';
+        }
+        if (!authState.user!.isAdmin) {
+          return '/';
+        }
+      }
+      return null;
+    },
     routes: [
       // Shell con bottom navigation
       ShellRoute(
@@ -147,6 +160,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           return CheckoutSuccessScreen(orderId: orderId);
         },
       ),
+      // Checkout cancel
+      GoRoute(
+        path: '/checkout/cancel',
+        builder: (context, state) => const CheckoutCancelScreen(),
+      ),
       // Admin
       GoRoute(
         path: '/admin',
@@ -184,6 +202,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AdminReturnsScreen(),
       ),
       GoRoute(
+        path: '/admin/invoices',
+        builder: (context, state) => const AdminInvoicesScreen(),
+      ),
+      GoRoute(
+        path: '/admin/visits',
+        builder: (context, state) => const AdminVisitsScreen(),
+      ),
+      GoRoute(
         path: '/admin/settings',
         builder: (context, state) => const AdminSettingsScreen(),
       ),
@@ -215,6 +241,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ),
   );
+  ref.onDispose(() => router.dispose());
+  return router;
 });
 
 class MainShell extends ConsumerWidget {
@@ -232,37 +260,43 @@ class MainShell extends ConsumerWidget {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, -4),
+              color: AppTheme.primaryColor.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -6),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
             ),
           ],
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _NavItem(
                   icon: Icons.home_outlined,
-                  selectedIcon: Icons.home,
+                  selectedIcon: Icons.home_rounded,
                   label: 'Inicio',
                   isSelected: selectedIndex == 0,
                   onTap: () => context.go('/'),
                 ),
                 _NavItem(
                   icon: Icons.storefront_outlined,
-                  selectedIcon: Icons.storefront,
+                  selectedIcon: Icons.storefront_rounded,
                   label: 'Tienda',
                   isSelected: selectedIndex == 1,
                   onTap: () => context.go('/products'),
                 ),
                 _NavItem(
                   icon: Icons.shopping_cart_outlined,
-                  selectedIcon: Icons.shopping_cart,
+                  selectedIcon: Icons.shopping_cart_rounded,
                   label: 'Carrito',
                   isSelected: selectedIndex == 2,
                   badgeCount: cartItemCount,
@@ -270,14 +304,14 @@ class MainShell extends ConsumerWidget {
                 ),
                 _NavItem(
                   icon: Icons.receipt_long_outlined,
-                  selectedIcon: Icons.receipt_long,
+                  selectedIcon: Icons.receipt_long_rounded,
                   label: 'Pedidos',
                   isSelected: selectedIndex == 3,
                   onTap: () => context.go('/orders'),
                 ),
                 _NavItem(
-                  icon: Icons.person_outline,
-                  selectedIcon: Icons.person,
+                  icon: Icons.person_outline_rounded,
+                  selectedIcon: Icons.person_rounded,
                   label: 'Perfil',
                   isSelected: selectedIndex == 4,
                   onTap: () => context.go('/profile'),
@@ -320,47 +354,86 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: isSelected
-            ? BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppTheme.borderRadiusFull),
-              )
-            : null,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Badge(
-              label: badgeCount > 0
-                  ? Text('$badgeCount', style: const TextStyle(fontSize: 10))
-                  : null,
-              isLabelVisible: badgeCount > 0,
-              backgroundColor: AppTheme.secondaryColor,
-              child: Icon(
-                isSelected ? selectedIcon : icon,
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : AppTheme.textSecondary,
-                size: 22,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        splashColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+        highlightColor: AppTheme.primaryColor.withValues(alpha: 0.05),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: EdgeInsets.symmetric(
+            horizontal: isSelected ? 14 : 10,
+            vertical: 8,
+          ),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? LinearGradient(
+                    colors: [
+                      AppTheme.primaryColor.withValues(alpha: 0.12),
+                      const Color(0xFF9333EA).withValues(alpha: 0.06),
+                    ],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Badge(
+                label: badgeCount > 0
+                    ? Text(
+                        '$badgeCount',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      )
+                    : null,
+                isLabelVisible: badgeCount > 0,
+                backgroundColor: AppTheme.secondaryColor,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(
+                    isSelected ? selectedIcon : icon,
+                    key: ValueKey(isSelected),
+                    color: isSelected
+                        ? AppTheme.primaryColor
+                        : AppTheme.textSecondary.withValues(alpha: 0.7),
+                    size: isSelected ? 24 : 22,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : AppTheme.textSecondary,
+              const SizedBox(height: 3),
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 200),
+                style: TextStyle(
+                  fontSize: isSelected ? 11 : 10,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected
+                      ? AppTheme.primaryColor
+                      : AppTheme.textSecondary.withValues(alpha: 0.7),
+                ),
+                child: Text(label),
               ),
-            ),
-          ],
+              // Indicador en punto debajo del ítem seleccionado
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.only(top: 3),
+                width: isSelected ? 5 : 0,
+                height: isSelected ? 5 : 0,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryColor, Color(0xFF9333EA)],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

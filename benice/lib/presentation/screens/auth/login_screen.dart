@@ -80,7 +80,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     gradient: AppTheme.primaryGradient,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text('🐾', style: TextStyle(fontSize: 48)),
+                  child: const Icon(Icons.pets, size: 48, color: Colors.white),
                 ),
                 const SizedBox(height: 24),
                 // Título

@@ -92,7 +92,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                 count: ref.watch(cartItemCountProvider),
                 child: IconButton(
                   icon: const Icon(Icons.shopping_cart_outlined),
-                  onPressed: () => context.push('/cart'),
+                  onPressed: () => context.go('/cart'),
                 ),
               ),
             ),
@@ -135,23 +135,27 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.borderRadiusLg,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
                           ),
-                        ),
-                        child: Text(
-                          '${product.category.emoji} ${product.category.label}',
-                          style: const TextStyle(
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(
+                              AppTheme.borderRadiusLg,
+                            ),
+                          ),
+                          child: Text(
+                            product.category.label,
+                            style: const TextStyle(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
@@ -199,8 +203,9 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   ],
                   const SizedBox(height: 16),
                   // Precio
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    spacing: 12,
                     children: [
                       if (product.hasDiscount) ...[
                         Text(
@@ -211,7 +216,6 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             decoration: TextDecoration.lineThrough,
                           ),
                         ),
-                        const SizedBox(width: 12),
                       ],
                       Text(
                         '${product.finalPrice.toStringAsFixed(2)}€',
@@ -438,6 +442,8 @@ class _ImageCarousel extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             child: CachedNetworkImage(
               imageUrl: images.first,
+              memCacheWidth: 400,
+              memCacheHeight: 400,
               width: double.infinity,
               height: double.infinity,
               fit: BoxFit.contain,
@@ -452,6 +458,8 @@ class _ImageCarousel extends StatelessWidget {
                 padding: const EdgeInsets.all(8),
                 child: CachedNetworkImage(
                   imageUrl: images[index],
+                  memCacheWidth: 400,
+                  memCacheHeight: 400,
                   width: double.infinity,
                   fit: BoxFit.contain,
                 ),
@@ -530,14 +538,14 @@ class _SpecificationsSection extends StatelessWidget {
             children: [
               Expanded(
                 child: _SpecItem(
-                  icon: product.animalType.emoji,
+                  icon: product.animalType.icon,
                   label: 'Animal',
                   value: product.animalType.label,
                 ),
               ),
               Expanded(
                 child: _SpecItem(
-                  icon: '📏',
+                  icon: Icons.straighten,
                   label: 'Tamaño',
                   value: product.animalSize.label,
                 ),
@@ -549,14 +557,14 @@ class _SpecificationsSection extends StatelessWidget {
             children: [
               Expanded(
                 child: _SpecItem(
-                  icon: '🎂',
+                  icon: Icons.cake,
                   label: 'Edad',
                   value: product.animalAge.label,
                 ),
               ),
               Expanded(
                 child: _SpecItem(
-                  icon: product.category.emoji,
+                  icon: product.category.icon,
                   label: 'Categoría',
                   value: product.category.label,
                 ),
@@ -570,7 +578,7 @@ class _SpecificationsSection extends StatelessWidget {
 }
 
 class _SpecItem extends StatelessWidget {
-  final String icon;
+  final IconData icon;
   final String label;
   final String value;
 
@@ -584,7 +592,7 @@ class _SpecItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(icon, style: const TextStyle(fontSize: 20)),
+        Icon(icon, size: 20, color: AppTheme.primaryColor),
         const SizedBox(width: 8),
         Expanded(
           child: Column(

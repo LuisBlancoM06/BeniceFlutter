@@ -61,7 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ref
                         .read(productFiltersProvider.notifier)
                         .updateFilters(ProductFilters(animalType: type));
-                    context.push('/products');
+                    context.go('/products');
                   },
                 ),
                 const SizedBox(height: 32),
@@ -81,8 +81,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => context.push('/products'),
-                        child: const Text('Ver todos →'),
+                        onPressed: () => context.go('/products'),
+                        child: const Text('Ver todos'),
                       ),
                     ],
                   ),
@@ -102,20 +102,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final product = products[index];
-                  return ProductCard(
-                    product: product,
-                    onTap: () => context.push('/product/${product.id}'),
-                    onAddToCart: () {
-                      ref.read(cartProvider.notifier).addToCart(product);
-                      CustomSnackBar.showSuccess(
-                        context,
-                        '${product.name} añadido al carrito',
-                      );
-                    },
-                  );
-                }, childCount: products.length.clamp(0, 6)),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final product = products[index];
+                    return RepaintBoundary(
+                      child: ProductCard(
+                        product: product,
+                        onTap: () => context.push('/product/${product.id}'),
+                        onAddToCart: () {
+                          ref.read(cartProvider.notifier).addToCart(product);
+                          CustomSnackBar.showSuccess(
+                            context,
+                            '${product.name} añadido al carrito',
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  addAutomaticKeepAlives: false,
+                  childCount: products.length.clamp(0, 6),
+                ),
               ),
               loading: () => SliverGrid(
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -165,9 +171,10 @@ class _NotificationBanner extends StatefulWidget {
   State<_NotificationBanner> createState() => _NotificationBannerState();
 }
 
-class _NotificationBannerState extends State<_NotificationBanner> {
+class _NotificationBannerState extends State<_NotificationBanner>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
-  late Timer _timer;
+  Timer? _timer;
 
   final List<Map<String, dynamic>> _notifications = [
     {
@@ -184,6 +191,12 @@ class _NotificationBannerState extends State<_NotificationBanner> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 3), (_) {
       if (mounted) {
         setState(
@@ -194,8 +207,18 @@ class _NotificationBannerState extends State<_NotificationBanner> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _timer?.cancel();
+    } else if (state == AppLifecycleState.resumed) {
+      _startTimer();
+    }
+  }
+
+  @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -218,25 +241,32 @@ class _NotificationBannerState extends State<_NotificationBanner> {
             ),
           );
         },
-        child: Row(
+        child: Padding(
           key: ValueKey(_currentIndex),
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _notifications[_currentIndex]['icon'] as IconData,
-              color: Colors.white,
-              size: 16,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              _notifications[_currentIndex]['text'] as String,
-              style: const TextStyle(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                _notifications[_currentIndex]['icon'] as IconData,
                 color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+                size: 16,
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  _notifications[_currentIndex]['text'] as String,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -251,35 +281,36 @@ class _HeroCarousel extends StatefulWidget {
   State<_HeroCarousel> createState() => _HeroCarouselState();
 }
 
-class _HeroCarouselState extends State<_HeroCarousel> {
+class _HeroCarouselState extends State<_HeroCarousel>
+    with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  late Timer _timer;
+  Timer? _timer;
 
   final List<_HeroSlide> _slides = [
     _HeroSlide(
       imageUrl:
-          'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=1200&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=300&fit=crop&q=75',
       title: 'Todo para tu Perro',
       subtitle: 'Los mejores productos para el cuidado de tu mejor amigo',
-      buttonText: 'Ver productos →',
+      buttonText: 'Ver productos',
       route: '/products',
       gradient: AppTheme.heroGradientDog,
       buttonColor: AppTheme.primaryColor,
     ),
     _HeroSlide(
       imageUrl:
-          'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=1200&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800&h=300&fit=crop&q=75',
       title: 'Mima a tu Gato',
       subtitle: 'Alimentación premium y accesorios para felinos exigentes',
-      buttonText: 'Descubrir →',
+      buttonText: 'Descubrir',
       route: '/products',
       gradient: AppTheme.heroGradientCat,
       buttonColor: AppTheme.secondaryColor,
     ),
     _HeroSlide(
       imageUrl:
-          'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=1200&h=400&fit=crop',
+          'https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800&h=300&fit=crop&q=75',
       title: 'Tus Favoritos',
       subtitle:
           'Guarda los productos que más te gustan y encuéntralos fácilmente',
@@ -293,6 +324,12 @@ class _HeroCarouselState extends State<_HeroCarousel> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (mounted && _pageController.hasClients) {
         final nextPage = (_currentPage + 1) % _slides.length;
@@ -306,10 +343,37 @@ class _HeroCarouselState extends State<_HeroCarousel> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _timer?.cancel();
+    } else if (state == AppLifecycleState.resumed) {
+      _startTimer();
+    }
+  }
+
+  @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     _pageController.dispose();
     super.dispose();
+  }
+
+  /// Rutas dentro del ShellRoute usan go(), las demás push()
+  static const _shellRoutes = {
+    '/',
+    '/products',
+    '/cart',
+    '/orders',
+    '/profile',
+  };
+
+  void _navigateToRoute(BuildContext context, String route) {
+    if (_shellRoutes.contains(route)) {
+      context.go(route);
+    } else {
+      context.push(route);
+    }
   }
 
   @override
@@ -325,16 +389,17 @@ class _HeroCarouselState extends State<_HeroCarousel> {
             itemBuilder: (context, index) {
               final slide = _slides[index];
               return GestureDetector(
-                onTap: () => context.push(slide.route),
+                onTap: () => _navigateToRoute(context, slide.route),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
                     CachedNetworkImage(
                       imageUrl: slide.imageUrl,
+                      memCacheWidth: 500,
+                      memCacheHeight: 200,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) =>
-                          Container(color: Colors.grey[300]),
-                      errorWidget: (_, __, ___) => Container(
+                      placeholder: (_, _) => Container(color: Colors.grey[200]),
+                      errorWidget: (_, _, _) => Container(
                         color: AppTheme.primaryColor.withValues(alpha: 0.3),
                         child: const Icon(
                           Icons.pets,
@@ -350,7 +415,7 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                       left: 24,
                       top: 0,
                       bottom: 0,
-                      right: MediaQuery.of(context).size.width * 0.35,
+                      right: MediaQuery.of(context).size.width * 0.3,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,10 +424,12 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                             slide.title,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 26,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                               height: 1.2,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -376,7 +443,8 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () => context.push(slide.route),
+                            onPressed: () =>
+                                _navigateToRoute(context, slide.route),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: slide.buttonColor,
                               foregroundColor: Colors.white,
@@ -533,45 +601,57 @@ class _AnimalTypeSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: AnimalType.values.map((type) {
-          final colors = _getTypeColors(type);
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onSelected(type),
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: colors['bg'],
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadiusMd),
-                  border: Border.all(color: colors['border']!, width: 1),
-                ),
-                child: Column(
-                  children: [
-                    Text(type.emoji, style: const TextStyle(fontSize: 32)),
-                    const SizedBox(height: 8),
-                    Text(
-                      type.label,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        color: colors['text'],
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: AnimalType.values.map((type) {
+            final colors = _getTypeColors(type);
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => onSelected(type),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: colors['bg'],
+                    borderRadius: BorderRadius.circular(
+                      AppTheme.borderRadiusMd,
+                    ),
+                    border: Border.all(color: colors['border']!, width: 1),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _getEmoji(type),
+                        style: const TextStyle(fontSize: 30),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _getSubtitle(type),
-                      style: TextStyle(fontSize: 10, color: colors['subtext']),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        type.label,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: colors['text'],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getSubtitle(type),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: colors['subtext'],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -610,6 +690,17 @@ class _AnimalTypeSelector extends StatelessWidget {
         return 'Felinos exigentes';
       case AnimalType.otro:
         return 'Conejos, aves y más';
+    }
+  }
+
+  String _getEmoji(AnimalType type) {
+    switch (type) {
+      case AnimalType.perro:
+        return '🐶';
+      case AnimalType.gato:
+        return '🐱';
+      case AnimalType.otro:
+        return '🐰';
     }
   }
 }
@@ -677,12 +768,16 @@ class _BenefitItem extends StatelessWidget {
               fontSize: 11,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
             subtitle,
             style: TextStyle(color: Colors.grey[400], fontSize: 9),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -708,7 +803,7 @@ class _AppFooter extends StatelessWidget {
               Icon(Icons.pets, color: AppTheme.primaryLight, size: 28),
               const SizedBox(width: 8),
               const Text(
-                'Venice',
+                'BeniceAstro',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -744,11 +839,11 @@ class _AppFooter extends StatelessWidget {
                     const SizedBox(height: 10),
                     _FooterLink(
                       text: 'Perros',
-                      onTap: () => context.push('/products'),
+                      onTap: () => context.go('/products'),
                     ),
                     _FooterLink(
                       text: 'Gatos',
-                      onTap: () => context.push('/products'),
+                      onTap: () => context.go('/products'),
                     ),
                     _FooterLink(
                       text: 'Ofertas',
@@ -756,7 +851,7 @@ class _AppFooter extends StatelessWidget {
                     ),
                     _FooterLink(
                       text: 'Todos los productos',
-                      onTap: () => context.push('/products'),
+                      onTap: () => context.go('/products'),
                     ),
                   ],
                 ),
@@ -842,7 +937,7 @@ class _AppFooter extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     _FooterLink(text: '900 123 456', onTap: () {}),
-                    _FooterLink(text: 'info@venice.com', onTap: () {}),
+                    _FooterLink(text: 'info@benice.com', onTap: () {}),
                     _FooterLink(text: 'WhatsApp', onTap: () {}),
                     Text(
                       'Calle Gran Vía, 123\n28013 Madrid',
@@ -863,14 +958,18 @@ class _AppFooter extends StatelessWidget {
           Divider(color: Colors.grey[800]),
           const SizedBox(height: 12),
           // Copyright
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                '© ${DateTime.now().year} Venice Pet Shop',
+                '© ${DateTime.now().year} BeniceAstro Pet Shop',
                 style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'Pagos: ',

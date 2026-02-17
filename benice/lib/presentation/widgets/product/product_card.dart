@@ -28,46 +28,74 @@ class ProductCard extends ConsumerWidget {
         constraints: const BoxConstraints(maxWidth: 180),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(AppTheme.borderRadiusLg),
+          borderRadius: BorderRadius.circular(AppTheme.borderRadiusXl),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
+              color: AppTheme.primaryColor.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+              spreadRadius: 0,
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
-          border: Border.all(color: Colors.grey.shade100),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Imagen
             Expanded(
-              flex: 5,
+              flex: 3,
               child: Stack(
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppTheme.borderRadiusLg),
+                      top: Radius.circular(AppTheme.borderRadiusXl),
                     ),
                     child: Container(
-                      color: Colors.white,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.grey.shade50, Colors.white],
+                        ),
+                      ),
                       child: CachedNetworkImage(
                         imageUrl: product.mainImage,
+                        memCacheWidth: 300,
+                        memCacheHeight: 300,
                         width: double.infinity,
                         height: double.infinity,
                         fit: BoxFit.contain,
                         placeholder: (context, url) => Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
+                          baseColor: Colors.grey[200]!,
+                          highlightColor: Colors.grey[50]!,
                           child: Container(color: Colors.white),
                         ),
                         errorWidget: (context, url, error) => Container(
-                          color: const Color(0xFFF3F4F6),
-                          child: const Icon(
-                            Icons.pets,
-                            size: 40,
-                            color: Colors.grey,
+                          color: const Color(0xFFF8F9FA),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.pets,
+                                size: 36,
+                                color: AppTheme.primaryColor.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Sin imagen',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -80,14 +108,23 @@ class ProductCard extends ConsumerWidget {
                       left: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 10,
+                          vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.errorColor,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                          ),
                           borderRadius: BorderRadius.circular(
                             AppTheme.borderRadiusFull,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.errorColor.withValues(alpha: 0.3),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Text(
                           '-${product.discountPercentage}%',
@@ -108,14 +145,15 @@ class ProductCard extends ConsumerWidget {
                           .read(favoritesProvider.notifier)
                           .toggleFavorite(product.id),
                       child: Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.95),
+                          color: Colors.white,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 4,
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
@@ -129,71 +167,40 @@ class ProductCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  // Animal type badge
-                  Positioned(
-                    bottom: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(
-                          AppTheme.borderRadiusFull,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            product.animalType.emoji,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            product.animalType.label,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
             // Info
             Expanded(
-              flex: 4,
+              flex: 2,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Categoría
-                    Text(
-                      product.category.label.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 9,
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                    // Categoría con icono
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        product.category.label.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 9,
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     // Nombre
                     Expanded(
                       child: Text(
@@ -202,7 +209,7 @@ class ProductCard extends ConsumerWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: AppTheme.textPrimary,
-                          height: 1.2,
+                          height: 1.3,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -214,57 +221,63 @@ class ProductCard extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (product.hasDiscount)
-                              Text(
-                                '${product.price.toStringAsFixed(2)}€',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppTheme.textLight,
-                                  decoration: TextDecoration.lineThrough,
-                                  decorationColor: AppTheme.textLight,
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (product.hasDiscount)
+                                Text(
+                                  '${product.price.toStringAsFixed(2)}€',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppTheme.textLight,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: AppTheme.textLight,
+                                  ),
                                 ),
+                              Text(
+                                '${product.finalPrice.toStringAsFixed(2)}€',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: product.hasDiscount
+                                      ? AppTheme.errorColor
+                                      : AppTheme.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            Text(
-                              '${product.finalPrice.toStringAsFixed(2)}€',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: product.hasDiscount
-                                    ? AppTheme.errorColor
-                                    : AppTheme.textPrimary,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         if (onAddToCart != null && product.inStock)
                           GestureDetector(
                             onTap: onAddToCart,
                             child: Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(9),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                   colors: [
                                     AppTheme.primaryColor,
                                     Color(0xFF9333EA),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppTheme.primaryColor.withValues(
-                                      alpha: 0.3,
+                                      alpha: 0.35,
                                     ),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
                                   ),
                                 ],
                               ),
                               child: const Icon(
-                                Icons.add_shopping_cart,
+                                Icons.add_shopping_cart_rounded,
                                 color: Colors.white,
                                 size: 16,
                               ),
@@ -273,18 +286,19 @@ class ProductCard extends ConsumerWidget {
                         if (!product.inStock)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
+                              horizontal: 8,
+                              vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(4),
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
                               'Agotado',
                               style: TextStyle(
                                 fontSize: 9,
                                 color: AppTheme.textLight,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
@@ -381,6 +395,9 @@ class ProductsGrid extends StatelessWidget {
       return GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: true,
+        cacheExtent: 100,
         padding: const EdgeInsets.all(16),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -424,6 +441,8 @@ class ProductsGrid extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -437,10 +456,14 @@ class ProductsGrid extends StatelessWidget {
           return const ProductCardShimmer();
         }
         final product = products[index];
-        return ProductCard(
-          product: product,
-          onTap: () => onProductTap(product),
-          onAddToCart: onAddToCart != null ? () => onAddToCart!(product) : null,
+        return RepaintBoundary(
+          child: ProductCard(
+            product: product,
+            onTap: () => onProductTap(product),
+            onAddToCart: onAddToCart != null
+                ? () => onAddToCart!(product)
+                : null,
+          ),
         );
       },
     );

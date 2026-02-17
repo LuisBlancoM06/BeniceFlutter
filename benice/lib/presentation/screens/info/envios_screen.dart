@@ -56,7 +56,7 @@ class EnviosScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            _sectionTitle('📦 Información de Envío'),
+            _sectionTitle('Información de Envío'),
             _infoCard([
               _infoRow('Coste estándar', '${AppConstants.shippingCost}€'),
               _infoRow(
@@ -69,7 +69,7 @@ class EnviosScreen extends StatelessWidget {
             ]),
             const SizedBox(height: 20),
 
-            _sectionTitle('📋 Seguimiento'),
+            _sectionTitle('Seguimiento'),
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(16),
@@ -90,7 +90,7 @@ class EnviosScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            _sectionTitle('🔄 Devoluciones'),
+            _sectionTitle('Devoluciones'),
             _infoCard([
               _infoRow('Plazo', '14 días desde la recepción'),
               _infoRow('Condición', 'Producto sin usar y en embalaje original'),
@@ -99,7 +99,7 @@ class EnviosScreen extends StatelessWidget {
             ]),
             const SizedBox(height: 20),
 
-            _sectionTitle('📍 Dirección de Devolución'),
+            _sectionTitle('Dirección de Devolución'),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -125,7 +125,7 @@ class EnviosScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            _sectionTitle('⚠️ Excepciones'),
+            _sectionTitle('Excepciones'),
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(16),
