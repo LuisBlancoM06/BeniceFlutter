@@ -56,11 +56,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    // Escuchar errores
+    // Escuchar errores (defer clearError para evitar cambios de estado re-entrantes)
     ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.errorMessage != null) {
+      if (next.errorMessage != null &&
+          previous?.errorMessage != next.errorMessage) {
         CustomSnackBar.showError(context, next.errorMessage!);
-        ref.read(authProvider.notifier).clearError();
+        Future.microtask(() => ref.read(authProvider.notifier).clearError());
       }
     });
 

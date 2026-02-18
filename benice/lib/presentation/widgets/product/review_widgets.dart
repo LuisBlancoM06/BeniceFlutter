@@ -451,7 +451,7 @@ class _CreateReviewFormState extends ConsumerState<CreateReviewForm> {
   Future<void> _submitReview() async {
     setState(() => _isSubmitting = true);
     try {
-      await ref
+      final success = await ref
           .read(reviewsActionsProvider(widget.productId))
           .addReview(
             rating: _rating,
@@ -466,8 +466,12 @@ class _CreateReviewFormState extends ConsumerState<CreateReviewForm> {
           _isSubmitting = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Reseña enviada! Gracias por tu opinión.'),
+          SnackBar(
+            content: Text(
+              success
+                  ? '¡Reseña enviada! Gracias por tu opinión.'
+                  : 'Error al enviar reseña. ¿Has iniciado sesión?',
+            ),
           ),
         );
       }

@@ -672,7 +672,7 @@ class _AnimalTypeSelector extends StatelessWidget {
           'text': AppTheme.secondaryColor,
           'subtext': AppTheme.textSecondary,
         };
-      case AnimalType.otro:
+      case AnimalType.otros:
         return {
           'bg': const Color(0xFFF0FDF4),
           'border': const Color(0xFFBBF7D0),
@@ -688,7 +688,7 @@ class _AnimalTypeSelector extends StatelessWidget {
         return 'Tu mejor amigo';
       case AnimalType.gato:
         return 'Felinos exigentes';
-      case AnimalType.otro:
+      case AnimalType.otros:
         return 'Conejos, aves y más';
     }
   }
@@ -699,7 +699,7 @@ class _AnimalTypeSelector extends StatelessWidget {
         return '🐶';
       case AnimalType.gato:
         return '🐱';
-      case AnimalType.otro:
+      case AnimalType.otros:
         return '🐰';
     }
   }

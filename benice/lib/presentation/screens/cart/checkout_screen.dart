@@ -26,6 +26,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _promoController = TextEditingController();
   bool _isProcessing = false;
   int _currentStep = 0;
+  bool _hasInitializedFromUser = false;
 
   @override
   void dispose() {
@@ -45,9 +46,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final cart = cartState.cart;
     final authState = ref.watch(authProvider);
 
-    if (authState.user != null && _nameController.text.isEmpty) {
-      _nameController.text = authState.user!.name ?? '';
-      _phoneController.text = authState.user!.phone ?? '';
+    if (authState.user != null && !_hasInitializedFromUser) {
+      _hasInitializedFromUser = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _nameController.text = authState.user!.name ?? '';
+        _phoneController.text = authState.user!.phone ?? '';
+        if (authState.user!.address != null) {
+          _addressController.text = authState.user!.address!;
+        }
+        if (authState.user!.city != null) {
+          _cityController.text = authState.user!.city!;
+        }
+        if (authState.user!.postalCode != null) {
+          _postalCodeController.text = authState.user!.postalCode!;
+        }
+      });
     }
 
     return Scaffold(
@@ -65,8 +78,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       body: cart.items.isEmpty
           ? const EmptyState(
               icon: Icons.shopping_cart_outlined,
-              title: 'Carrito vacio',
-              message: 'Anade productos antes de continuar',
+              title: 'Carrito vacío',
+              message: 'Añade productos antes de continuar',
             )
           : Column(
               children: [
@@ -514,7 +527,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         Expanded(
           child: _TrustBadge(
             icon: Icons.replay_30,
-            label: '30 dias devolucion',
+            label: '14 días devolución',
             color: AppTheme.infoColor,
           ),
         ),
@@ -686,9 +699,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               image: item.product.images.isNotEmpty
                   ? DecorationImage(
                       image: ResizeImage(
-                        CachedNetworkImageProvider(
-                          item.product.images.first,
-                        ),
+                        CachedNetworkImageProvider(item.product.images.first),
                         width: 100,
                         height: 100,
                       ),

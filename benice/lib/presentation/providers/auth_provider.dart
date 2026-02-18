@@ -5,6 +5,9 @@ import 'repository_providers.dart';
 /// Estado de autenticación
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
+/// Sentinel value para distinguir "no proporcionado" de "explícitamente null"
+const _sentinel = Object();
+
 /// Estado de la autenticación
 class AuthState {
   final AuthStatus status;
@@ -23,13 +26,15 @@ class AuthState {
 
   AuthState copyWith({
     AuthStatus? status,
-    UserEntity? user,
-    String? errorMessage,
+    Object? user = _sentinel,
+    Object? errorMessage = _sentinel,
   }) {
     return AuthState(
       status: status ?? this.status,
-      user: user ?? this.user,
-      errorMessage: errorMessage ?? this.errorMessage,
+      user: user == _sentinel ? this.user : user as UserEntity?,
+      errorMessage: errorMessage == _sentinel
+          ? this.errorMessage
+          : errorMessage as String?,
     );
   }
 }
@@ -141,8 +146,27 @@ class AuthNotifier extends Notifier<AuthState> {
     return result.fold((failure) => false, (_) => true);
   }
 
+  /// Refresh the current user data from the backend
+  Future<void> refreshUser() async {
+    final result = await ref.read(authRepositoryProvider).getCurrentUser();
+    result.fold(
+      (_) {}, // Keep current state on failure
+      (user) {
+        if (user != null) {
+          state = state.copyWith(status: AuthStatus.authenticated, user: user);
+        }
+      },
+    );
+  }
+
   void clearError() {
-    state = state.copyWith(errorMessage: null);
+    if (state.errorMessage == null) return; // No-op si ya no hay error
+    state = state.copyWith(
+      status: state.status == AuthStatus.error
+          ? AuthStatus.unauthenticated
+          : null,
+      errorMessage: null,
+    );
   }
 }
 

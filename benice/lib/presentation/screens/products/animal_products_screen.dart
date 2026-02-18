@@ -322,7 +322,10 @@ class AnimalProductsScreen extends ConsumerWidget {
                     mainAxisSpacing: 12,
                   ),
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => ProductCard(product: products[index]),
+                    (context, index) => RepaintBoundary(
+                      child: ProductCard(product: products[index]),
+                    ),
+                    addAutomaticKeepAlives: false,
                     childCount: products.length,
                   ),
                 ),
@@ -418,7 +421,7 @@ class AnimalProductsScreen extends ConsumerWidget {
             {'id': 'senior', 'name': 'Senior', 'desc': '+7 años'},
           ],
         };
-      case AnimalType.otro:
+      case AnimalType.otros:
         return {
           'name': 'Otros Animales',
           'icon': Icons.cruelty_free,

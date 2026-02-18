@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/entities/entities.dart';
@@ -11,6 +12,10 @@ class SupabaseDataSource {
   SupabaseDataSource(this._client);
 
   SupabaseClient get client => _client;
+
+  /// Columnas necesarias para listados de productos (evita descargar description, images, etc.)
+  static const _productListColumns =
+      'id,name,slug,price,sale_price,on_sale,image_url,category,animal_type,stock,rating,reviews_count,brand,size,age_range,created_at';
 
   // ==================== AUTH ====================
 
@@ -98,7 +103,7 @@ class SupabaseDataSource {
     int page = 1,
     int limit = 20,
   }) async {
-    var query = _client.from('products').select();
+    var query = _client.from('products').select(_productListColumns);
 
     if (filters != null) {
       if (filters.animalType != null) {
@@ -143,10 +148,25 @@ class SupabaseDataSource {
     return ProductModel.fromJson(data);
   }
 
+  Future<List<ProductModel>> getProductsByIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final data = await _client.from('products').select().inFilter('id', ids);
+    return (data as List).map((e) => ProductModel.fromJson(e)).toList();
+  }
+
+  Future<OrderModel> getOrderById(String orderId) async {
+    final data = await _client
+        .from('orders')
+        .select('*, order_items(*, products(name, image_url))')
+        .eq('id', orderId)
+        .single();
+    return OrderModel.fromJson(data);
+  }
+
   Future<List<ProductModel>> searchProducts(String query) async {
     final data = await _client
         .from('products')
-        .select()
+        .select(_productListColumns)
         .ilike('name', '%$query%')
         .limit(10);
     return (data as List).map((e) => ProductModel.fromJson(e)).toList();
@@ -156,7 +176,7 @@ class SupabaseDataSource {
     // DB has no is_featured column; show on_sale products as featured
     final data = await _client
         .from('products')
-        .select()
+        .select(_productListColumns)
         .eq('on_sale', true)
         .gt('stock', 0)
         .limit(8);
@@ -166,7 +186,7 @@ class SupabaseDataSource {
   Future<List<ProductModel>> getOfertasFlash() async {
     final data = await _client
         .from('products')
-        .select()
+        .select(_productListColumns)
         .eq('on_sale', true)
         .gt('stock', 0)
         .order('created_at', ascending: false)
@@ -178,7 +198,7 @@ class SupabaseDataSource {
     final product = await getProductById(productId);
     final data = await _client
         .from('products')
-        .select()
+        .select(_productListColumns)
         .eq('animal_type', product.animalType.name)
         .neq('id', productId)
         .limit(4);
@@ -220,14 +240,15 @@ class SupabaseDataSource {
         .from('orders')
         .select('*, order_items(*, products(name, image_url))')
         .eq('user_id', userId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(50);
 
     return (data as List).map((order) {
       return OrderModel.fromJson(order);
     }).toList();
   }
 
-  Future<Map<String, dynamic>> createOrderRpc({
+  Future<String> createOrderRpc({
     required String userId,
     required double total,
     required List<Map<String, dynamic>> items,
@@ -244,9 +265,51 @@ class SupabaseDataSource {
         'p_items': items,
         'p_promo_code': promoCode,
         'p_discount_amount': discountAmount ?? 0,
+        'p_shipping_address': shippingAddress,
       },
     );
-    return result as Map<String, dynamic>;
+    // RPC devuelve UUID directamente como string
+    return result.toString();
+  }
+
+  /// Crear factura para un pedido (consistente con webhook de Astro)
+  Future<void> createInvoice({
+    required String orderId,
+    required String userId,
+    required double total,
+  }) async {
+    // Generar número de factura: FAC-{año}-{secuencia}
+    final year = DateTime.now().year;
+    final prefix = 'FAC';
+
+    final data = await _client
+        .from('invoices')
+        .select('invoice_number')
+        .like('invoice_number', '$prefix-$year-%')
+        .order('invoice_number', ascending: false)
+        .limit(1);
+
+    int sequence = 1;
+    if (data.isNotEmpty) {
+      final lastNumber = data[0]['invoice_number'] as String;
+      final match = RegExp(r'(\d+)$').firstMatch(lastNumber);
+      if (match != null) {
+        sequence = int.parse(match.group(1)!) + 1;
+      }
+    }
+
+    final invoiceNumber =
+        '$prefix-$year-${sequence.toString().padLeft(6, '0')}';
+
+    await _client.from('invoices').insert({
+      'order_id': orderId,
+      'user_id': userId,
+      'invoice_number': invoiceNumber,
+      'invoice_type': 'factura',
+      'subtotal': (total / 1.21 * 100).round() / 100, // Sin IVA 21%
+      'tax_amount': ((total - total / 1.21) * 100).round() / 100,
+      'total': total,
+    });
   }
 
   Future<void> cancelOrderRpc(String orderId) async {
@@ -265,7 +328,7 @@ class SupabaseDataSource {
     if (status != null) {
       query = query.eq('status', status);
     }
-    final data = await query.order('created_at', ascending: false);
+    final data = await query.order('created_at', ascending: false).limit(100);
     return (data as List).map((order) {
       return OrderModel.fromJson(order);
     }).toList();
@@ -286,7 +349,8 @@ class SupabaseDataSource {
         .from('product_reviews')
         .select()
         .eq('product_id', productId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(50);
     return (data as List).map((e) => ReviewModel.fromJson(e)).toList();
   }
 
@@ -344,7 +408,8 @@ class SupabaseDataSource {
     final data = await _client
         .from('newsletters')
         .select()
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(200);
     return (data as List)
         .map((e) => NewsletterSubscriberModel.fromJson(e))
         .toList();
@@ -360,7 +425,8 @@ class SupabaseDataSource {
     final data = await _client
         .from('invoices')
         .select()
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(100);
     return (data as List).map((e) => InvoiceModel.fromJson(e)).toList();
   }
 
@@ -380,7 +446,7 @@ class SupabaseDataSource {
     if (userId != null) {
       query = query.eq('user_id', userId);
     }
-    final data = await query.order('created_at', ascending: false);
+    final data = await query.order('created_at', ascending: false).limit(100);
     return (data as List).map((e) => ReturnModel.fromJson(e)).toList();
   }
 
@@ -438,9 +504,10 @@ class SupabaseDataSource {
     List<int> fileBytes,
   ) async {
     final path = 'products/$fileName';
-    await _client.storage
-        .from('products')
-        .uploadBinary(path, fileBytes as dynamic);
+    final bytes = fileBytes is Uint8List
+        ? fileBytes
+        : Uint8List.fromList(fileBytes);
+    await _client.storage.from('products').uploadBinary(path, bytes);
     return _client.storage.from('products').getPublicUrl(path);
   }
 
@@ -472,7 +539,8 @@ class SupabaseDataSource {
     final data = await _client
         .from('users')
         .select()
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(200);
     return (data as List).map((e) => UserModel.fromJson(e)).toList();
   }
 }

@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../widgets/common/common_widgets.dart';
 
-class ContactScreen extends StatefulWidget {
+class ContactScreen extends ConsumerStatefulWidget {
   const ContactScreen({super.key});
 
   @override
-  State<ContactScreen> createState() => _ContactScreenState();
+  ConsumerState<ContactScreen> createState() => _ContactScreenState();
 }
 
-class _ContactScreenState extends State<ContactScreen> {
+class _ContactScreenState extends ConsumerState<ContactScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -195,31 +197,36 @@ class _ContactScreenState extends State<ContactScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSending = true);
     try {
+      // Insert into contact_messages table
       await Supabase.instance.client.from('contact_messages').insert({
         'name': _nameCtrl.text,
         'email': _emailCtrl.text,
         'phone': _phoneCtrl.text.isNotEmpty ? _phoneCtrl.text : null,
         'subject': _subjectCtrl.text,
         'message': _messageCtrl.text,
-        'created_at': DateTime.now().toIso8601String(),
       });
-    } catch (_) {
-      // Si la tabla no existe aún, simplemente continuamos
-      // El mensaje se "envía" exitosamente de cara al usuario
-    }
-    if (mounted) {
-      setState(() => _isSending = false);
-      _nameCtrl.clear();
-      _emailCtrl.clear();
-      _phoneCtrl.clear();
-      _subjectCtrl.clear();
-      _messageCtrl.clear();
-      _formKey.currentState!.reset();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('¡Mensaje enviado! Te responderemos pronto.'),
-        ),
-      );
+
+      if (mounted) {
+        setState(() => _isSending = false);
+        _nameCtrl.clear();
+        _emailCtrl.clear();
+        _phoneCtrl.clear();
+        _subjectCtrl.clear();
+        _messageCtrl.clear();
+        _formKey.currentState!.reset();
+        CustomSnackBar.showSuccess(
+          context,
+          '¡Mensaje enviado! Te responderemos pronto.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSending = false);
+        CustomSnackBar.showError(
+          context,
+          'Error al enviar el mensaje. Inténtalo de nuevo o escríbenos a info@benice.com',
+        );
+      }
     }
   }
 }

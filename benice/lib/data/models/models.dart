@@ -28,7 +28,12 @@ class UserModel extends UserEntity {
       fullName: json['full_name'] as String?,
       phone: json['phone'] as String?,
       address: json['address'] as String?,
+      city: json['city'] as String?,
+      postalCode: json['postal_code'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
       role: json['role'] as String? ?? 'user',
+      isSubscribedNewsletter:
+          json['is_subscribed_newsletter'] as bool? ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -114,9 +119,7 @@ class ProductModel extends ProductEntity {
     // DB: animal_type enum values: 'perro', 'gato', 'otros'
     final animalTypeStr = json['animal_type'] as String? ?? 'perro';
     final animalType = AnimalType.values.firstWhere(
-      (e) =>
-          e.name == animalTypeStr ||
-          e.name == animalTypeStr.replaceAll('s', ''),
+      (e) => e.name == animalTypeStr,
       orElse: () => AnimalType.perro,
     );
 
@@ -184,7 +187,7 @@ class ProductModel extends ProductEntity {
       'on_sale': onSale,
       'image_url': imageUrl ?? mainImage,
       'images': images,
-      'brand': brand ?? 'BeniceAstro',
+      'brand': brand ?? 'Benice',
       'animal_type': animalType.name,
       'size': animalSize.name,
       'category': category.name,

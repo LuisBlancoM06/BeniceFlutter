@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -77,7 +78,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     radius: 40,
                     backgroundColor: Colors.white.withValues(alpha: 0.2),
                     backgroundImage: user.avatarUrl != null
-                        ? NetworkImage(user.avatarUrl!)
+                        ? CachedNetworkImageProvider(user.avatarUrl!)
                         : null,
                     child: user.avatarUrl == null
                         ? Text(
@@ -336,7 +337,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ? null
                   : () async {
                       setDialogState(() => isSaving = true);
-                      final authNotifier = ref.read(authProvider.notifier);
                       // Use the repository to update profile
                       final result = await ref
                           .read(authRepositoryProvider)
@@ -358,11 +358,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           }
                         },
                         (updatedUser) {
-                          // Refresh auth state
-                          authNotifier.login(
-                            email: updatedUser.email,
-                            password: '', // Won't re-auth, just refreshes
-                          );
+                          // Refresh auth state by re-checking current user
+                          ref.read(authProvider.notifier).refreshUser();
                           if (context.mounted) {
                             CustomSnackBar.showSuccess(
                               context,

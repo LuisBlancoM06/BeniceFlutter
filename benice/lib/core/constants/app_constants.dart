@@ -1,4 +1,4 @@
-// Constantes de la aplicación BeniceAstro
+// Constantes de la aplicación Venice Pet Shop
 import 'package:flutter/material.dart';
 
 class AppConstants {
@@ -15,7 +15,7 @@ class AppConstants {
   static const bool useMockData = false;
 
   // App Info
-  static const String appName = 'BeniceAstro';
+  static const String appName = 'Venice Pet Shop';
   static const String appVersion = '1.0.0';
   static const String appTagline =
       'Todo lo que tu mascota necesita en un solo lugar';
@@ -34,7 +34,7 @@ class AppConstants {
   static const int newsletterDiscountPercent = 10;
 
   // Envío
-  static const double freeShippingMinAmount = 50.0;
+  static const double freeShippingMinAmount = 49.0;
   static const double shippingCost = 4.99;
 
   // Devoluciones
@@ -47,7 +47,7 @@ class AppConstants {
 enum AnimalType {
   perro('Perros', Icons.pets),
   gato('Gatos', Icons.pets),
-  otro('Otros Animales', Icons.cruelty_free);
+  otros('Otros Animales', Icons.cruelty_free);
 
   final String label;
   final IconData icon;

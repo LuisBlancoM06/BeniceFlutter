@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../providers/providers.dart';
 
 /// Pantalla para crear/editar un producto (admin)
@@ -304,7 +303,7 @@ class _AdminProductFormScreenState
                             icon: Icons.category_rounded,
                             children: [
                               DropdownButtonFormField<AnimalType>(
-                                value: _animalType,
+                                initialValue: _animalType,
                                 decoration: _inputDeco(
                                   'Tipo de Animal',
                                   Icons.pets_rounded,
@@ -322,7 +321,7 @@ class _AdminProductFormScreenState
                               ),
                               const SizedBox(height: 14),
                               DropdownButtonFormField<ProductCategory>(
-                                value: _category,
+                                initialValue: _category,
                                 decoration: _inputDeco(
                                   'Categoría',
                                   Icons.grid_view_rounded,
@@ -343,7 +342,7 @@ class _AdminProductFormScreenState
                                 children: [
                                   Expanded(
                                     child: DropdownButtonFormField<AnimalSize>(
-                                      value: _animalSize,
+                                      initialValue: _animalSize,
                                       decoration: _inputDeco(
                                         'Tamaño',
                                         Icons.straighten_rounded,
@@ -363,7 +362,7 @@ class _AdminProductFormScreenState
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: DropdownButtonFormField<AnimalAge>(
-                                      value: _animalAge,
+                                      initialValue: _animalAge,
                                       decoration: _inputDeco(
                                         'Edad',
                                         Icons.cake_rounded,
@@ -414,7 +413,7 @@ class _AdminProductFormScreenState
                               ),
                               value: _isFeatured,
                               onChanged: (v) => setState(() => _isFeatured = v),
-                              activeColor: const Color(0xFF7C3AED),
+                              activeThumbColor: const Color(0xFF7C3AED),
                             ),
                           ),
                           const SizedBox(height: 24),

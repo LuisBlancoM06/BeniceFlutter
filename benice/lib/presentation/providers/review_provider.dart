@@ -128,25 +128,36 @@ class ReviewsActions {
 
   ReviewsActions(this.ref, this.productId);
 
-  Future<void> addReview({required int rating, String? comment}) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    final newReview = ReviewEntity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+  Future<bool> addReview({required int rating, String? comment}) async {
+    final reviewRepo = ref.read(reviewRepositoryProvider);
+    final result = await reviewRepo.createReview(
       productId: productId,
-      userId: 'current-user',
-      userName: 'Tú',
       rating: rating,
       comment: comment,
-      verifiedPurchase: true,
-      createdAt: DateTime.now(),
     );
 
-    ref.read(_reviewsStoreProvider.notifier).addReview(productId, newReview);
+    return result.fold((failure) => false, (review) {
+      ref.read(_reviewsStoreProvider.notifier).addReview(productId, review);
+      return true;
+    });
   }
 
-  void deleteReview(String reviewId) {
-    ref.read(_reviewsStoreProvider.notifier).deleteReview(productId, reviewId);
+  Future<bool> deleteReview(String reviewId) async {
+    final reviewRepo = ref.read(reviewRepositoryProvider);
+    final result = await reviewRepo.deleteReview(reviewId);
+
+    return result.fold((failure) => false, (_) {
+      ref
+          .read(_reviewsStoreProvider.notifier)
+          .deleteReview(productId, reviewId);
+      return true;
+    });
+  }
+
+  Future<bool> voteHelpful(String reviewId) async {
+    final reviewRepo = ref.read(reviewRepositoryProvider);
+    final result = await reviewRepo.voteHelpful(reviewId);
+    return result.fold((_) => false, (_) => true);
   }
 }
 

@@ -400,6 +400,17 @@ class ProductRepositoryImpl implements ProductRepository {
       return Left(ServerFailure(message: e.toString()));
     }
   }
+
+  @override
+  ResultFuture<List<ProductEntity>> getProductsByIds(List<String> ids) async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 300));
+      final products = _products.where((p) => ids.contains(p.id)).toList();
+      return Right(products);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
 }
 
 /// Implementación del repositorio de carrito

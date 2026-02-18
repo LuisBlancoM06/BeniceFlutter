@@ -64,6 +64,8 @@ abstract class ProductRepository {
 
   ResultFuture<List<ProductEntity>> getRelatedProducts(String productId);
 
+  ResultFuture<List<ProductEntity>> getProductsByIds(List<String> ids);
+
   ResultFuture<List<ProductEntity>> getOfertasFlash();
 }
 

@@ -73,24 +73,25 @@ final favoritesProvider = NotifierProvider<FavoritesNotifier, FavoritesState>(
 );
 
 final isFavoriteProvider = Provider.family<bool, String>((ref, productId) {
-  return ref.watch(favoritesProvider).favoriteIds.contains(productId);
+  return ref.watch(
+    favoritesProvider.select((state) => state.favoriteIds.contains(productId)),
+  );
 });
 
 final favoriteCountProvider = Provider<int>((ref) {
   return ref.watch(favoritesProvider).favoriteIds.length;
 });
 
-/// Provider que carga los productos favoritos por sus IDs
+/// Provider que carga los productos favoritos por sus IDs (batch query)
 final favoriteProductsProvider =
     FutureProvider.autoDispose<List<ProductEntity>>((ref) async {
-      final favoriteIds = ref.watch(favoritesProvider).favoriteIds;
+      final favoriteIds = ref.watch(
+        favoritesProvider.select((s) => s.favoriteIds),
+      );
       if (favoriteIds.isEmpty) return [];
 
-      final productRepo = ref.read(productRepositoryProvider);
-      final results = <ProductEntity>[];
-      for (final id in favoriteIds) {
-        final result = await productRepo.getProductById(id);
-        result.fold((_) {}, (product) => results.add(product));
-      }
-      return results;
+      final result = await ref
+          .read(productRepositoryProvider)
+          .getProductsByIds(favoriteIds.toList());
+      return result.fold((_) => <ProductEntity>[], (products) => products);
     });

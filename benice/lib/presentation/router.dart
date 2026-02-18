@@ -145,7 +145,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/otros',
         builder: (context, state) =>
-            const AnimalProductsScreen(animalType: AnimalType.otro),
+            const AnimalProductsScreen(animalType: AnimalType.otros),
       ),
       // Recomendador
       GoRoute(

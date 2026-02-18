@@ -334,7 +334,7 @@ class MockDataSource {
         images: [
           'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=500',
         ],
-        animalType: AnimalType.otro,
+        animalType: AnimalType.otros,
         animalSize: AnimalSize.mini,
         category: ProductCategory.alimentacion,
         animalAge: AnimalAge.adulto,
@@ -356,7 +356,7 @@ class MockDataSource {
         images: [
           'https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=500',
         ],
-        animalType: AnimalType.otro,
+        animalType: AnimalType.otros,
         animalSize: AnimalSize.mini,
         category: ProductCategory.accesorios,
         animalAge: AnimalAge.adulto,
@@ -376,7 +376,7 @@ class MockDataSource {
         images: [
           'https://images.unsplash.com/photo-1452570053594-1b985d6ea890?w=500',
         ],
-        animalType: AnimalType.otro,
+        animalType: AnimalType.otros,
         animalSize: AnimalSize.mini,
         category: ProductCategory.alimentacion,
         animalAge: AnimalAge.adulto,
@@ -396,7 +396,7 @@ class MockDataSource {
         images: [
           'https://images.unsplash.com/photo-1520302630591-fd1c66edc19d?w=500',
         ],
-        animalType: AnimalType.otro,
+        animalType: AnimalType.otros,
         animalSize: AnimalSize.mini,
         category: ProductCategory.accesorios,
         animalAge: AnimalAge.adulto,

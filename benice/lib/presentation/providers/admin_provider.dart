@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/constants/app_constants.dart';
 import '../../domain/entities/entities.dart';
 import 'repository_providers.dart';
 
@@ -134,7 +135,20 @@ class AdminOrdersNotifier extends Notifier<AdminOrdersState> {
   Future<void> updateOrderStatus(String orderId, String newStatus) async {
     final adminRepo = ref.read(adminRepositoryProvider);
     await adminRepo.updateOrderStatus(orderId, newStatus);
-    _loadOrders();
+    // Actualizar localmente en vez de recargar todos los pedidos
+    final updated = state.orders.map((o) {
+      if (o.id == orderId) {
+        return o.copyWith(
+          status: OrderStatus.values.firstWhere(
+            (s) => s.name == newStatus,
+            orElse: () => o.status,
+          ),
+          updatedAt: DateTime.now(),
+        );
+      }
+      return o;
+    }).toList();
+    state = AdminOrdersState(orders: updated, filterStatus: state.filterStatus);
   }
 }
 

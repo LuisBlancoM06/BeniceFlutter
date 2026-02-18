@@ -206,7 +206,7 @@ class _RecommenderScreenState extends ConsumerState<RecommenderScreen> {
         'desc': 'Independientes y cariñosos',
       },
       {
-        'type': AnimalType.otro,
+        'type': AnimalType.otros,
         'icon': Icons.cruelty_free,
         'name': 'Otro',
         'desc': 'Pájaros, peces, roedores...',

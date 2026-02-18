@@ -5,37 +5,11 @@ import '../../../core/theme/app_theme.dart';
 import '../../providers/providers.dart';
 import '../../widgets/product/product_card.dart';
 
-class OfertasScreen extends ConsumerStatefulWidget {
+class OfertasScreen extends ConsumerWidget {
   const OfertasScreen({super.key});
 
   @override
-  ConsumerState<OfertasScreen> createState() => _OfertasScreenState();
-}
-
-class _OfertasScreenState extends ConsumerState<OfertasScreen> {
-  late Timer _countdownTimer;
-  Duration _remainingTime = const Duration(hours: 23, minutes: 59, seconds: 59);
-
-  @override
-  void initState() {
-    super.initState();
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_remainingTime.inSeconds > 0) {
-        setState(() {
-          _remainingTime = _remainingTime - const Duration(seconds: 1);
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _countdownTimer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync = ref.watch(productsProvider);
 
     // Filtrar productos con descuento
@@ -87,47 +61,8 @@ class _OfertasScreenState extends ConsumerState<OfertasScreen> {
                         style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                       const SizedBox(height: 16),
-                      // Countdown
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _CountdownBox(
-                            value: _remainingTime.inHours.toString().padLeft(
-                              2,
-                              '0',
-                            ),
-                            label: 'Horas',
-                          ),
-                          const Text(
-                            ' : ',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          _CountdownBox(
-                            value: (_remainingTime.inMinutes % 60)
-                                .toString()
-                                .padLeft(2, '0'),
-                            label: 'Min',
-                          ),
-                          const Text(
-                            ' : ',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          _CountdownBox(
-                            value: (_remainingTime.inSeconds % 60)
-                                .toString()
-                                .padLeft(2, '0'),
-                            label: 'Seg',
-                          ),
-                        ],
-                      ),
+                      // Countdown aislado en su propio widget
+                      const _CountdownTimer(),
                     ],
                   ),
                 ),
@@ -212,8 +147,10 @@ class _OfertasScreenState extends ConsumerState<OfertasScreen> {
                   childAspectRatio: 0.65,
                 ),
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) =>
-                      ProductCard(product: ofertaProducts[index]),
+                  (context, index) => RepaintBoundary(
+                    child: ProductCard(product: ofertaProducts[index]),
+                  ),
+                  addAutomaticKeepAlives: false,
                   childCount: ofertaProducts.length,
                 ),
               ),
@@ -254,6 +191,91 @@ class _CountdownBox extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(fontSize: 10, color: Colors.white70),
+        ),
+      ],
+    );
+  }
+}
+
+/// Widget aislado que solo reconstruye el countdown, no la pantalla entera
+class _CountdownTimer extends StatefulWidget {
+  const _CountdownTimer();
+
+  @override
+  State<_CountdownTimer> createState() => _CountdownTimerState();
+}
+
+class _CountdownTimerState extends State<_CountdownTimer>
+    with WidgetsBindingObserver {
+  Timer? _timer;
+  Duration _remaining = const Duration(hours: 23, minutes: 59, seconds: 59);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_remaining.inSeconds > 0 && mounted) {
+        setState(() => _remaining -= const Duration(seconds: 1));
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _timer?.cancel();
+    } else if (state == AppLifecycleState.resumed) {
+      _startTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _CountdownBox(
+          value: _remaining.inHours.toString().padLeft(2, '0'),
+          label: 'Horas',
+        ),
+        const Text(
+          ' : ',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        _CountdownBox(
+          value: (_remaining.inMinutes % 60).toString().padLeft(2, '0'),
+          label: 'Min',
+        ),
+        const Text(
+          ' : ',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        _CountdownBox(
+          value: (_remaining.inSeconds % 60).toString().padLeft(2, '0'),
+          label: 'Seg',
         ),
       ],
     );

@@ -304,22 +304,24 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                       itemCount: products.length,
                       itemBuilder: (context, index) {
                         final relatedProduct = products[index];
-                        return Container(
-                          width: 160,
-                          margin: const EdgeInsets.only(right: 12),
-                          child: ProductCard(
-                            product: relatedProduct,
-                            onTap: () =>
-                                context.push('/product/${relatedProduct.id}'),
-                            onAddToCart: () {
-                              ref
-                                  .read(cartProvider.notifier)
-                                  .addToCart(relatedProduct);
-                              CustomSnackBar.showSuccess(
-                                context,
-                                '${relatedProduct.name} añadido al carrito',
-                              );
-                            },
+                        return RepaintBoundary(
+                          child: Container(
+                            width: 160,
+                            margin: const EdgeInsets.only(right: 12),
+                            child: ProductCard(
+                              product: relatedProduct,
+                              onTap: () =>
+                                  context.push('/product/${relatedProduct.id}'),
+                              onAddToCart: () {
+                                ref
+                                    .read(cartProvider.notifier)
+                                    .addToCart(relatedProduct);
+                                CustomSnackBar.showSuccess(
+                                  context,
+                                  '${relatedProduct.name} añadido al carrito',
+                                );
+                              },
+                            ),
                           ),
                         );
                       },

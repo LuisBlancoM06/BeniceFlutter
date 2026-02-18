@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/failure.dart';
@@ -240,6 +241,16 @@ class SupabaseProductRepositoryImpl implements ProductRepository {
   }
 
   @override
+  ResultFuture<List<ProductEntity>> getProductsByIds(List<String> ids) async {
+    try {
+      final products = await _ds.getProductsByIds(ids);
+      return Right(products);
+    } catch (e) {
+      return Left(ServerFailure(message: _parseError(e)));
+    }
+  }
+
+  @override
   ResultFuture<List<ProductEntity>> getOfertasFlash() async {
     try {
       final products = await _ds.getOfertasFlash();
@@ -282,11 +293,7 @@ class SupabaseOrderRepositoryImpl implements OrderRepository {
       if (_userId == null) {
         return const Left(AuthFailure(message: 'Usuario no autenticado'));
       }
-      final orders = await _ds.getOrders(_userId!);
-      final order = orders.firstWhere(
-        (o) => o.id == id,
-        orElse: () => throw Exception('Pedido no encontrado'),
-      );
+      final order = await _ds.getOrderById(id);
       return Right(order);
     } catch (e) {
       return Left(ServerFailure(message: _parseError(e)));
@@ -316,7 +323,7 @@ class SupabaseOrderRepositoryImpl implements OrderRepository {
           )
           .toList();
 
-      final result = await _ds.createOrderRpc(
+      final orderId = await _ds.createOrderRpc(
         userId: _userId!,
         total: cart.total,
         items: items,
@@ -326,13 +333,20 @@ class SupabaseOrderRepositoryImpl implements OrderRepository {
         notes: notes,
       );
 
-      // Devolver el pedido recién creado
-      final orderId = result['order_id']?.toString() ?? '';
-      final orders = await _ds.getOrders(_userId!);
-      final order = orders.firstWhere(
-        (o) => o.id == orderId,
-        orElse: () => orders.first,
-      );
+      // Crear factura (consistente con webhook de Astro)
+      try {
+        await _ds.createInvoice(
+          orderId: orderId,
+          userId: _userId!,
+          total: cart.total,
+        );
+      } catch (e) {
+        // No fallamos el pedido si la factura falla
+        debugPrint('Error creando factura: $e');
+      }
+
+      // Devolver el pedido recién creado (query directa)
+      final order = await _ds.getOrderById(orderId);
       return Right(order);
     } catch (e) {
       return Left(ServerFailure(message: _parseError(e)));
@@ -343,11 +357,7 @@ class SupabaseOrderRepositoryImpl implements OrderRepository {
   ResultFuture<OrderEntity> cancelOrder(String orderId) async {
     try {
       await _ds.cancelOrderRpc(orderId);
-      final orders = await _ds.getOrders(_userId!);
-      final order = orders.firstWhere(
-        (o) => o.id == orderId,
-        orElse: () => throw Exception('Pedido no encontrado'),
-      );
+      final order = await _ds.getOrderById(orderId);
       return Right(order);
     } catch (e) {
       return Left(ServerFailure(message: _parseError(e)));
@@ -371,11 +381,7 @@ class SupabaseOrderRepositoryImpl implements OrderRepository {
         'status': 'solicitada',
       });
 
-      final orders = await _ds.getOrders(_userId!);
-      final order = orders.firstWhere(
-        (o) => o.id == orderId,
-        orElse: () => throw Exception('Pedido no encontrado'),
-      );
+      final order = await _ds.getOrderById(orderId);
       return Right(order);
     } catch (e) {
       return Left(ServerFailure(message: _parseError(e)));

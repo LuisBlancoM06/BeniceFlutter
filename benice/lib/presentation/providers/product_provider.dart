@@ -150,9 +150,13 @@ final relatedProductsProvider = FutureProvider.autoDispose
       return result.fold((failure) => [], (products) => products);
     });
 
-/// Provider para productos destacados
+/// Provider para productos destacados (con caché de 5 minutos)
 final featuredProductsProvider =
     FutureProvider.autoDispose<List<ProductEntity>>((ref) async {
+      final link = ref.keepAlive();
+      final timer = Timer(const Duration(minutes: 5), link.close);
+      ref.onDispose(timer.cancel);
+
       final result = await ref
           .read(productRepositoryProvider)
           .getFeaturedProducts();
