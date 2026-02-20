@@ -3,13 +3,20 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   // Supabase Configuration
-  static const String supabaseUrl = 'https://ayyknhzftdlytpapdugj.supabase.co';
-  static const String supabaseAnonKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5eWtuaHpmdGRseXRwYXBkdWdqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg4NzU1MjgsImV4cCI6MjA4NDQ1MTUyOH0.CcMwUeUFBFLEHUVRd199koUkmkO-aUbyukcu4Mt5BDA';
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: '',
+  );
+  static const String supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: '',
+  );
 
   // Stripe Configuration (publishable key - safe for client)
-  static const String stripePublishableKey =
-      'pk_test_51SXzcbBfDSWtKsGGUgJ8XLN3GpL1E9FgEu3sjzFidvlMRaQQQJZvHMHaaDdryhxbwyNFbzs8hwB7Kwnnr3eYD99u00AFXVRgZn';
+  static const String stripePublishableKey = String.fromEnvironment(
+    'STRIPE_PUBLISHABLE_KEY',
+    defaultValue: '',
+  );
 
   // Data Source Mode: set to false to use live Supabase data
   static const bool useMockData = false;

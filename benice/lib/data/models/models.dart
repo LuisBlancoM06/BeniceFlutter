@@ -224,7 +224,7 @@ class CartItemModel extends CartItemEntity {
         'id': product.id,
         'name': product.name,
         'price': product.price,
-        'sale_price': product.salePrice,
+        'sale_price': product.discountPrice,
         'on_sale': product.onSale,
         'image_url': product.imageUrl,
         'stock': product.stock,
