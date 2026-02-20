@@ -78,6 +78,14 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
     required String newPassword,
   }) async {
     try {
+      // Verify current password by attempting a sign-in first.
+      // Supabase's updateUser does not verify the old password on its own.
+      final email = _ds.client.auth.currentUser?.email;
+      if (email == null) {
+        return const Left(AuthFailure(message: 'Usuario no autenticado'));
+      }
+      await _ds.signIn(email, currentPassword);
+
       await _ds.updatePassword(newPassword);
       return const Right(null);
     } catch (e) {
@@ -102,7 +110,7 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
       }
 
       final data = <String, dynamic>{};
-      if (name != null) data['name'] = name;
+      if (name != null) data['full_name'] = name;
       if (fullName != null) data['full_name'] = fullName;
       if (phone != null) data['phone'] = phone;
       if (address != null) data['address'] = address;

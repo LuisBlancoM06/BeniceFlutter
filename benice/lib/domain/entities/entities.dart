@@ -209,11 +209,14 @@ class CartEntity extends Equatable {
   CartEntity copyWith({
     List<CartItemEntity>? items,
     String? discountCode,
+    bool clearDiscountCode = false,
     double? discountPercent,
   }) {
     return CartEntity(
       items: items ?? this.items,
-      discountCode: discountCode ?? this.discountCode,
+      discountCode: clearDiscountCode
+          ? null
+          : (discountCode ?? this.discountCode),
       discountPercent: discountPercent ?? this.discountPercent,
     );
   }

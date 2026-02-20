@@ -26,13 +26,16 @@ class ProductsState {
     bool? hasMore,
     int? page,
     String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return ProductsState(
       products: products ?? this.products,
       isLoading: isLoading ?? this.isLoading,
       hasMore: hasMore ?? this.hasMore,
       page: page ?? this.page,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
     );
   }
 }

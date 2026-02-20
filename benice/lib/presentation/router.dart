@@ -9,6 +9,12 @@ import 'screens/screens.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/',
+    // KNOWN LIMITATION: ref.read(authProvider) inside redirect is not reactive.
+    // GoRouter's redirect runs only on navigation, not when auth state changes.
+    // For truly reactive auth-based redirects, use GoRouter's `refreshListenable`
+    // parameter with a ChangeNotifier that listens to auth state changes, or
+    // wrap admin screens with a ConsumerWidget that watches authProvider and
+    // performs programmatic navigation on auth loss.
     redirect: (context, state) {
       final path = state.uri.path;
       if (path.startsWith('/admin')) {

@@ -48,6 +48,10 @@ class UserModel extends UserEntity {
       'phone': phone,
       'address': address,
       'role': role,
+      if (city != null) 'city': city,
+      if (postalCode != null) 'postal_code': postalCode,
+      if (avatarUrl != null) 'avatar_url': avatarUrl,
+      'created_at': createdAt.toIso8601String(),
     };
   }
 
@@ -216,7 +220,15 @@ class CartItemModel extends CartItemEntity {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'product': (product as ProductModel).toJson(),
+      'product': product is ProductModel ? (product as ProductModel).toJson() : {
+        'id': product.id,
+        'name': product.name,
+        'price': product.price,
+        'sale_price': product.salePrice,
+        'on_sale': product.onSale,
+        'image_url': product.imageUrl,
+        'stock': product.stock,
+      },
       'quantity': quantity,
     };
   }
@@ -310,13 +322,14 @@ class OrderModel extends OrderEntity {
 
     final total = (json['total'] as num).toDouble();
     final discountAmount = (json['discount_amount'] as num?)?.toDouble() ?? 0;
+    final shippingCost = (json['shipping_cost'] as num?)?.toDouble() ?? 0;
 
-    // Compute subtotal from items if available, else from total + discount
+    // Compute subtotal from items if available, else from total + discount - shipping
     double subtotal;
     if (items.isNotEmpty) {
       subtotal = items.fold(0.0, (sum, item) => sum + item.totalPrice);
     } else {
-      subtotal = total + discountAmount;
+      subtotal = total + discountAmount - shippingCost;
     }
 
     return OrderModel(
@@ -328,7 +341,7 @@ class OrderModel extends OrderEntity {
       items: items,
       subtotal: subtotal,
       discount: discountAmount,
-      shippingCost: (json['shipping_cost'] as num?)?.toDouble() ?? 0,
+      shippingCost: shippingCost,
       total: total,
       discountCode: json['promo_code'] as String?,
       status: OrderStatus.values.firstWhere(

@@ -131,7 +131,10 @@ class SupabaseDataSource {
         query = query.lte('price', filters.maxPrice!);
       }
       if (filters.searchQuery != null && filters.searchQuery!.isNotEmpty) {
-        query = query.ilike('name', '%${filters.searchQuery}%');
+        final escapedQuery = filters.searchQuery!
+            .replaceAll('%', '\\%')
+            .replaceAll('_', '\\_');
+        query = query.ilike('name', '%$escapedQuery%');
       }
     }
 

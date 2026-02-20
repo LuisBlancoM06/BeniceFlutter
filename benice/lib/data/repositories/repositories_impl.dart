@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -17,6 +18,12 @@ class AuthRepositoryImpl implements AuthRepository {
   static const String _userKey = 'current_user';
   static const String _isLoggedInKey = 'is_logged_in';
 
+  /// Keeps mock user IDs stable across calls for the same email.
+  static final Map<String, String> _mockUserIds = {};
+
+  /// Broadcast controller so that multiple listeners can react to auth changes.
+  final _authController = StreamController<UserEntity?>.broadcast();
+
   AuthRepositoryImpl(this._prefs);
 
   @override
@@ -33,7 +40,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       _currentUser = UserModel(
-        id: const Uuid().v4(),
+        id: _mockUserIds.putIfAbsent(email, () => const Uuid().v4()),
         email: email,
         name: email.split('@').first,
         createdAt: DateTime.now(),
@@ -41,6 +48,8 @@ class AuthRepositoryImpl implements AuthRepository {
 
       await _prefs.setString(_userKey, email);
       await _prefs.setBool(_isLoggedInKey, true);
+
+      _authController.add(_currentUser);
 
       return Right(_currentUser!);
     } catch (e) {
@@ -67,7 +76,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       _currentUser = UserModel(
-        id: const Uuid().v4(),
+        id: _mockUserIds.putIfAbsent(email, () => const Uuid().v4()),
         email: email,
         name: name ?? email.split('@').first,
         createdAt: DateTime.now(),
@@ -75,6 +84,8 @@ class AuthRepositoryImpl implements AuthRepository {
 
       await _prefs.setString(_userKey, email);
       await _prefs.setBool(_isLoggedInKey, true);
+
+      _authController.add(_currentUser);
 
       return Right(_currentUser!);
     } catch (e) {
@@ -88,6 +99,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await _prefs.remove(_userKey);
       await _prefs.setBool(_isLoggedInKey, false);
       _currentUser = null;
+      _authController.add(null);
       return const Right(null);
     } catch (e) {
       return Left(AuthFailure(message: e.toString()));
@@ -104,7 +116,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (email == null) return const Right(null);
 
       _currentUser = UserModel(
-        id: const Uuid().v4(),
+        id: _mockUserIds.putIfAbsent(email, () => const Uuid().v4()),
         email: email,
         name: email.split('@').first,
         createdAt: DateTime.now(),
@@ -212,7 +224,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Stream<UserEntity?> get authStateChanges {
-    return Stream.value(_currentUser);
+    return _authController.stream;
   }
 }
 

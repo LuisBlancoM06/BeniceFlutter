@@ -21,13 +21,16 @@ class CartState {
   CartState copyWith({
     CartEntity? cart,
     DiscountCodeEntity? discountCode,
+    bool clearDiscountCode = false,
     double? discount,
     bool? isApplyingDiscount,
     String? discountError,
   }) {
     return CartState(
       cart: cart ?? this.cart,
-      discountCode: discountCode ?? this.discountCode,
+      discountCode: clearDiscountCode
+          ? null
+          : (discountCode ?? this.discountCode),
       discount: discount ?? this.discount,
       isApplyingDiscount: isApplyingDiscount ?? this.isApplyingDiscount,
       discountError: discountError,
@@ -76,6 +79,7 @@ class CartNotifier extends Notifier<CartState> {
 
     state = state.copyWith(cart: CartEntity(items: newItems));
     _recalculateDiscount();
+    _saveCart();
   }
 
   void updateQuantity(String productId, int quantity) {
@@ -97,6 +101,7 @@ class CartNotifier extends Notifier<CartState> {
 
     state = state.copyWith(cart: CartEntity(items: newItems));
     _recalculateDiscount();
+    _saveCart();
   }
 
   void removeFromCart(String productId) {
@@ -106,10 +111,12 @@ class CartNotifier extends Notifier<CartState> {
 
     state = state.copyWith(cart: CartEntity(items: newItems));
     _recalculateDiscount();
+    _saveCart();
   }
 
   void clearCart() {
     state = const CartState();
+    _saveCart();
   }
 
   Future<void> applyDiscountCode(String code) async {
@@ -139,10 +146,14 @@ class CartNotifier extends Notifier<CartState> {
 
   void removeDiscountCode() {
     state = state.copyWith(
-      discountCode: null,
+      clearDiscountCode: true,
       discount: 0.0,
       discountError: null,
     );
+  }
+
+  void _saveCart() {
+    ref.read(cartRepositoryProvider).saveCartLocally(state.cart);
   }
 
   void _recalculateDiscount() {
@@ -167,5 +178,5 @@ final cartItemCountProvider = Provider<int>((ref) {
 /// Provider del total del carrito
 final cartTotalProvider = Provider<double>((ref) {
   final cartState = ref.watch(cartProvider);
-  return cartState.cart.subtotal - cartState.discount;
+  return cartState.cart.subtotal - cartState.discount + cartState.cart.shippingCost;
 });

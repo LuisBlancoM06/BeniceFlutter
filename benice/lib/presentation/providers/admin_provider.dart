@@ -117,7 +117,7 @@ class AdminOrdersNotifier extends Notifier<AdminOrdersState> {
     }
   }
 
-  void filterByStatus(String? status) async {
+  Future<void> filterByStatus(String? status) async {
     state = const AdminOrdersState(isLoading: true);
     try {
       final adminRepo = ref.read(adminRepositoryProvider);
@@ -134,21 +134,36 @@ class AdminOrdersNotifier extends Notifier<AdminOrdersState> {
 
   Future<void> updateOrderStatus(String orderId, String newStatus) async {
     final adminRepo = ref.read(adminRepositoryProvider);
-    await adminRepo.updateOrderStatus(orderId, newStatus);
-    // Actualizar localmente en vez de recargar todos los pedidos
-    final updated = state.orders.map((o) {
-      if (o.id == orderId) {
-        return o.copyWith(
-          status: OrderStatus.values.firstWhere(
-            (s) => s.name == newStatus,
-            orElse: () => o.status,
-          ),
-          updatedAt: DateTime.now(),
+    final result = await adminRepo.updateOrderStatus(orderId, newStatus);
+    result.fold(
+      (failure) {
+        // Don't update local state on failure
+        state = AdminOrdersState(
+          orders: state.orders,
+          filterStatus: state.filterStatus,
+          error: failure.message,
         );
-      }
-      return o;
-    }).toList();
-    state = AdminOrdersState(orders: updated, filterStatus: state.filterStatus);
+      },
+      (_) {
+        // Update local state only on success
+        final updated = state.orders.map((o) {
+          if (o.id == orderId) {
+            return o.copyWith(
+              status: OrderStatus.values.firstWhere(
+                (s) => s.name == newStatus,
+                orElse: () => o.status,
+              ),
+              updatedAt: DateTime.now(),
+            );
+          }
+          return o;
+        }).toList();
+        state = AdminOrdersState(
+          orders: updated,
+          filterStatus: state.filterStatus,
+        );
+      },
+    );
   }
 }
 
@@ -307,8 +322,20 @@ class OfertasFlashNotifier extends Notifier<OfertasFlashState> {
     return const OfertasFlashState(isActive: true);
   }
 
-  void toggle() {
-    state = OfertasFlashState(isActive: !state.isActive);
+  Future<void> toggle() async {
+    final newValue = !state.isActive;
+    state = OfertasFlashState(isActive: newValue, isLoading: true);
+    final adminRepo = ref.read(adminRepositoryProvider);
+    final result = await adminRepo.setOfertasFlashActive(newValue);
+    result.fold(
+      (failure) {
+        // Revert on failure
+        state = OfertasFlashState(isActive: !newValue);
+      },
+      (_) {
+        state = OfertasFlashState(isActive: newValue);
+      },
+    );
   }
 }
 

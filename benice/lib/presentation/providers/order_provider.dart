@@ -20,11 +20,14 @@ class OrdersState {
     List<OrderEntity>? orders,
     bool? isLoading,
     String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return OrdersState(
       orders: orders ?? this.orders,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
     );
   }
 }
