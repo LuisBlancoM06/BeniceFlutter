@@ -5,24 +5,78 @@ class AppConstants {
   // Supabase Configuration
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://placeholder.supabase.co',
   );
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
+    defaultValue: 'placeholder-key',
+  );
+  static const String supabaseServiceRoleKey = String.fromEnvironment(
+    'SUPABASE_SERVICE_ROLE_KEY',
     defaultValue: '',
   );
 
-  // Stripe Configuration (publishable key - safe for client)
+  // Stripe Configuration
+  static const String stripeSecretKey = String.fromEnvironment(
+    'STRIPE_SECRET_KEY',
+    defaultValue: '',
+  );
   static const String stripePublishableKey = String.fromEnvironment(
     'STRIPE_PUBLISHABLE_KEY',
     defaultValue: '',
+  );
+  static const String stripeWebhookSecret = String.fromEnvironment(
+    'STRIPE_WEBHOOK_SECRET',
+    defaultValue: '',
+  );
+
+  // Resend Email Configuration
+  static const String resendApiKey = String.fromEnvironment(
+    'RESEND_API_KEY',
+    defaultValue: '',
+  );
+  static const String fromEmail = String.fromEnvironment(
+    'FROM_EMAIL',
+    defaultValue: 'ventas@beniceflutter.com',
+  );
+
+  // Site Configuration
+  static const String publicSiteUrl = String.fromEnvironment(
+    'PUBLIC_SITE_URL',
+    defaultValue: 'http://localhost:3000',
+  );
+
+  // Cloudinary Configuration
+  static const String cloudinaryCloudName = String.fromEnvironment(
+    'CLOUDINARY_CLOUD_NAME',
+    defaultValue: '',
+  );
+  static const String cloudinaryApiKey = String.fromEnvironment(
+    'CLOUDINARY_API_KEY',
+    defaultValue: '',
+  );
+  static const String cloudinaryApiSecret = String.fromEnvironment(
+    'CLOUDINARY_API_SECRET',
+    defaultValue: '',
+  );
+
+  // Google Places API
+  static const String googlePlacesApiKey = String.fromEnvironment(
+    'GOOGLE_PLACES_API_KEY',
+    defaultValue: '',
+  );
+
+  // Flutter Environment
+  static const String flutterEnv = String.fromEnvironment(
+    'FLUTTER_ENV',
+    defaultValue: 'development',
   );
 
   // Data Source Mode: set to false to use live Supabase data
   static const bool useMockData = false;
 
   // App Info
-  static const String appName = 'Venice Pet Shop';
+  static const String appName = 'BeniceFlutter';
   static const String appVersion = '1.0.0';
   static const String appTagline =
       'Todo lo que tu mascota necesita en un solo lugar';
@@ -40,7 +94,7 @@ class AppConstants {
   static const String newsletterPromoCode = 'BIENVENIDO10';
   static const int newsletterDiscountPercent = 10;
 
-  // Envío
+  // Envío (mismos valores que Astro)
   static const double freeShippingMinAmount = 49.0;
   static const double shippingCost = 4.99;
 
@@ -48,6 +102,10 @@ class AppConstants {
   static const String warehouseAddress =
       'Calle Mascotas, 123\n28001 Madrid, España';
   static const String returnDaysInfo = '5-7 días hábiles para el reembolso';
+
+  // Stock Configuration
+  static const int lowStockThreshold = 10;
+  static const int outOfStockThreshold = 0;
 }
 
 // Tipos de animales

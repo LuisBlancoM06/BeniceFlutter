@@ -6,3 +6,4 @@ export 'order_provider.dart';
 export 'review_provider.dart';
 export 'favorites_provider.dart';
 export 'admin_provider.dart';
+export 'stock_provider.dart';

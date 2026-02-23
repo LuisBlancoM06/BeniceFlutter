@@ -51,7 +51,15 @@ class CartNotifier extends Notifier<CartState> {
     result.fold((failure) {}, (cart) => state = state.copyWith(cart: cart));
   }
 
-  void addToCart(ProductEntity product, {int quantity = 1}) {
+  void addToCart(ProductEntity product, {int quantity = 1}) async {
+    // Verificar stock disponible antes de agregar
+    if (!product.inStock || product.stock < quantity) {
+      state = state.copyWith(
+        discountError: 'No hay stock suficiente para ${product.name}. Stock disponible: ${product.stock}',
+      );
+      return;
+    }
+
     final existingIndex = state.cart.items.indexWhere(
       (item) => item.product.id == product.id,
     );
@@ -61,10 +69,20 @@ class CartNotifier extends Notifier<CartState> {
     if (existingIndex >= 0) {
       newItems = [...state.cart.items];
       final existingItem = newItems[existingIndex];
+      final newQuantity = existingItem.quantity + quantity;
+      
+      // Verificar stock para la cantidad total
+      if (product.stock < newQuantity) {
+        state = state.copyWith(
+          discountError: 'No hay stock suficiente para ${product.name}. Stock disponible: ${product.stock}',
+        );
+        return;
+      }
+      
       newItems[existingIndex] = CartItemEntity(
         id: existingItem.id,
         product: existingItem.product,
-        quantity: existingItem.quantity + quantity,
+        quantity: newQuantity,
       );
     } else {
       newItems = [
@@ -77,14 +95,30 @@ class CartNotifier extends Notifier<CartState> {
       ];
     }
 
-    state = state.copyWith(cart: CartEntity(items: newItems));
+    state = state.copyWith(
+      cart: CartEntity(items: newItems),
+      discountError: null, // Limpiar error si la operación fue exitosa
+    );
     _recalculateDiscount();
     _saveCart();
   }
 
-  void updateQuantity(String productId, int quantity) {
+  void updateQuantity(String productId, int quantity) async {
     if (quantity <= 0) {
       removeFromCart(productId);
+      return;
+    }
+
+    // Encontrar el producto para verificar stock
+    final cartItem = state.cart.items.firstWhere(
+      (item) => item.product.id == productId,
+    );
+    
+    // Verificar stock disponible
+    if (cartItem.product.stock < quantity) {
+      state = state.copyWith(
+        discountError: 'No hay stock suficiente para ${cartItem.product.name}. Stock disponible: ${cartItem.product.stock}',
+      );
       return;
     }
 
@@ -99,7 +133,10 @@ class CartNotifier extends Notifier<CartState> {
       return item;
     }).toList();
 
-    state = state.copyWith(cart: CartEntity(items: newItems));
+    state = state.copyWith(
+      cart: CartEntity(items: newItems),
+      discountError: null, // Limpiar error si la operación fue exitosa
+    );
     _recalculateDiscount();
     _saveCart();
   }
@@ -150,6 +187,48 @@ class CartNotifier extends Notifier<CartState> {
       discount: 0.0,
       discountError: null,
     );
+  }
+
+  /// Valida el carrito completo para checkout
+  Future<bool> validateCartForCheckout() async {
+    try {
+      // Limpiar errores anteriores
+      state = state.copyWith(discountError: null);
+      
+      // Verificar que el carrito no esté vacío
+      if (state.cart.items.isEmpty) {
+        state = state.copyWith(
+          discountError: 'El carrito está vacío',
+        );
+        return false;
+      }
+      
+      // Verificar stock para cada item del carrito
+      for (final item in state.cart.items) {
+        if (!item.product.inStock) {
+          state = state.copyWith(
+            discountError: '${item.product.name} está agotado',
+          );
+          return false;
+        }
+        
+        if (item.product.stock < item.quantity) {
+          final availableQuantity = item.product.stock > 0 ? item.product.stock : 0;
+          state = state.copyWith(
+            discountError: 'Stock insuficiente para ${item.product.name}. Stock disponible: $availableQuantity',
+          );
+          return false;
+        }
+      }
+      
+      // Si llegamos aquí, el carrito es válido
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        discountError: 'Error validando carrito: $e',
+      );
+      return false;
+    }
   }
 
   void _saveCart() {
