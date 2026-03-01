@@ -143,10 +143,7 @@ class ProductModel extends ProductEntity {
     );
 
     // DB: age_range enum: 'cachorro', 'adulto', 'senior'
-    final ageStr =
-        json['age_range'] as String? ??
-        json['animal_age'] as String? ??
-        'adulto';
+    final ageStr = json['age_range'] as String? ?? 'adulto';
     final animalAge = AnimalAge.values.firstWhere(
       (e) => e.name == ageStr,
       orElse: () => AnimalAge.adulto,
@@ -220,15 +217,17 @@ class CartItemModel extends CartItemEntity {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'product': product is ProductModel ? (product as ProductModel).toJson() : {
-        'id': product.id,
-        'name': product.name,
-        'price': product.price,
-        'sale_price': product.discountPrice,
-        'on_sale': product.onSale,
-        'image_url': product.imageUrl,
-        'stock': product.stock,
-      },
+      'product': product is ProductModel
+          ? (product as ProductModel).toJson()
+          : {
+              'id': product.id,
+              'name': product.name,
+              'price': product.price,
+              'sale_price': product.discountPrice,
+              'on_sale': product.onSale,
+              'image_url': product.imageUrl,
+              'stock': product.stock,
+            },
       'quantity': quantity,
     };
   }

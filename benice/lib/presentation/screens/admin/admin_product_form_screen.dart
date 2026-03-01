@@ -471,19 +471,19 @@ class _AdminProductFormScreenState
       'name': _nameController.text,
       'description': _descController.text,
       'price': double.parse(_priceController.text),
-      'discount_price': _discountPriceController.text.isNotEmpty
+      'sale_price': _discountPriceController.text.isNotEmpty
           ? double.parse(_discountPriceController.text)
           : null,
+      'on_sale': _discountPriceController.text.isNotEmpty,
       'stock': int.parse(_stockController.text),
       'brand': _brandController.text.isNotEmpty
           ? _brandController.text
           : 'BeniceAstro',
       'image_url': _imageUrlController.text,
       'animal_type': _animalType.name,
-      'animal_size': _animalSize.name,
+      'size': _animalSize.name,
       'category': _category.name,
-      'animal_age': _animalAge.name,
-      'is_featured': _isFeatured,
+      'age_range': _animalAge.name,
     };
 
     final adminRepo = ref.read(adminRepositoryProvider);
