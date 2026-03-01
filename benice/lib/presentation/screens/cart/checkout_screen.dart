@@ -1,10 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../domain/services/stripe_payment_service.dart';
 import '../../providers/providers.dart';
 import '../../widgets/common/common_widgets.dart';
 
@@ -24,9 +26,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _postalCodeController = TextEditingController();
   final _notesController = TextEditingController();
   final _promoController = TextEditingController();
+  // Card form controllers
+  final _cardNumberController = TextEditingController();
+  final _cardExpiryController = TextEditingController();
+  final _cardCvcController = TextEditingController();
+  final _cardHolderController = TextEditingController();
   bool _isProcessing = false;
   int _currentStep = 0;
   bool _hasInitializedFromUser = false;
+  String? _cardError;
 
   @override
   void dispose() {
@@ -37,6 +45,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     _postalCodeController.dispose();
     _notesController.dispose();
     _promoController.dispose();
+    _cardNumberController.dispose();
+    _cardExpiryController.dispose();
+    _cardCvcController.dispose();
+    _cardHolderController.dispose();
     super.dispose();
   }
 
@@ -416,44 +428,261 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         // Trust badges
         _buildTrustBadges(),
         const SizedBox(height: 24),
-        // Payment methods
+        // Card form
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(AppTheme.borderRadiusMd),
             border: Border.all(color: Colors.grey[200]!),
-          ),
-          child: Column(
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.credit_card, color: AppTheme.primaryColor),
-                  SizedBox(width: 8),
-                  Text(
-                    'Métodos de pago aceptados',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _PaymentMethodChip(label: 'Visa', icon: Icons.credit_card),
-                  _PaymentMethodChip(
-                    label: 'Mastercard',
-                    icon: Icons.credit_card,
-                  ),
-                  _PaymentMethodChip(
-                    label: 'Apple Pay',
-                    icon: Icons.phone_iphone,
-                  ),
-                  _PaymentMethodChip(label: 'Google', icon: Icons.g_mobiledata),
-                ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.credit_card, color: Color(0xFF635BFF)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Datos de la tarjeta',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Card holder name
+              TextFormField(
+                controller: _cardHolderController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  labelText: 'Titular de la tarjeta',
+                  hintText: 'NOMBRE APELLIDOS',
+                  prefixIcon: const Icon(Icons.person_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppTheme.borderRadiusMd,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppTheme.borderRadiusMd,
+                    ),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppTheme.borderRadiusMd,
+                    ),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF635BFF),
+                      width: 2,
+                    ),
+                  ),
+                ),
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Introduce el titular'
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              // Card number
+              TextFormField(
+                controller: _cardNumberController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [_CardNumberFormatter()],
+                decoration: InputDecoration(
+                  labelText: 'Número de tarjeta',
+                  hintText: '4242 4242 4242 4242',
+                  prefixIcon: const Icon(Icons.credit_card),
+                  suffixIcon: _buildCardBrandIcon(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppTheme.borderRadiusMd,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppTheme.borderRadiusMd,
+                    ),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AppTheme.borderRadiusMd,
+                    ),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF635BFF),
+                      width: 2,
+                    ),
+                  ),
+                ),
+                validator: (v) {
+                  final cleaned = v?.replaceAll(' ', '') ?? '';
+                  if (cleaned.length < 13 || cleaned.length > 19) {
+                    return 'Número de tarjeta inválido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              // Expiry + CVC row
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _cardExpiryController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [_ExpiryDateFormatter()],
+                      decoration: InputDecoration(
+                        labelText: 'Caducidad',
+                        hintText: 'MM/AA',
+                        prefixIcon: const Icon(Icons.calendar_today_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.borderRadiusMd,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.borderRadiusMd,
+                          ),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.borderRadiusMd,
+                          ),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF635BFF),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      validator: (v) {
+                        if (v == null ||
+                            !RegExp(r'^\d{2}/\d{2}$').hasMatch(v)) {
+                          return 'Formato MM/AA';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _cardCvcController,
+                      keyboardType: TextInputType.number,
+                      obscureText: true,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(4),
+                      ],
+                      decoration: InputDecoration(
+                        labelText: 'CVC',
+                        hintText: '123',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.borderRadiusMd,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.borderRadiusMd,
+                          ),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.borderRadiusMd,
+                          ),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF635BFF),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.length < 3) {
+                          return 'CVC inválido';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              if (_cardError != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: Colors.red[700],
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _cardError!,
+                          style: TextStyle(
+                            color: Colors.red[700],
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Test card hint
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue, size: 18),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Tarjeta de prueba: 4242 4242 4242 4242 | 12/34 | CVC: 123',
+                  style: TextStyle(color: Colors.blue, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        // Payment methods accepted
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _PaymentMethodChip(label: 'Visa', icon: Icons.credit_card),
+            _PaymentMethodChip(label: 'Mastercard', icon: Icons.credit_card),
+            _PaymentMethodChip(label: 'Apple Pay', icon: Icons.phone_iphone),
+            _PaymentMethodChip(label: 'Google', icon: Icons.g_mobiledata),
+          ],
         ),
         const SizedBox(height: 24),
         // Stripe button
@@ -472,11 +701,13 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   )
                 : const Icon(Icons.lock, color: Colors.white),
             label: Text(
-              _isProcessing ? 'Procesando...' : 'Pagar con Stripe',
+              _isProcessing
+                  ? 'Procesando pago...'
+                  : 'Pagar ${_calculateTotal(cart, cartState).toStringAsFixed(2)}\u20AC',
               style: const TextStyle(fontSize: 16),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF635BFF), // Stripe purple
+              backgroundColor: const Color(0xFF635BFF),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -492,7 +723,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             Icon(Icons.lock_outline, size: 14, color: AppTheme.textSecondary),
             SizedBox(width: 6),
             Text(
-              'Pago seguro con encriptacion SSL 256-bit',
+              'Pago seguro con encriptación SSL 256-bit',
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
             ),
           ],
@@ -511,6 +742,36 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         const SizedBox(height: 32),
       ],
     );
+  }
+
+  Widget _buildCardBrandIcon() {
+    final number = _cardNumberController.text.replaceAll(' ', '');
+    if (number.startsWith('4')) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          'VISA',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.blue[900],
+            fontSize: 12,
+          ),
+        ),
+      );
+    } else if (number.startsWith('5') || number.startsWith('2')) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          'MC',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.orange[800],
+            fontSize: 12,
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _buildTrustBadges() {
@@ -822,13 +1083,44 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _processOrder() async {
-    setState(() => _isProcessing = true);
+    // Validate card form
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isProcessing = true;
+      _cardError = null;
+    });
 
     try {
       final cartState = ref.read(cartProvider);
       final cart = cartState.cart;
+      final total = _calculateTotal(cart, cartState);
 
-      // Create order
+      // Parse expiry
+      final expiryParts = _cardExpiryController.text.split('/');
+      final expMonth = expiryParts[0];
+      final expYear = '20${expiryParts[1]}';
+
+      // Process payment with Stripe
+      final paymentResult = await StripePaymentService.processPayment(
+        cardNumber: _cardNumberController.text,
+        expMonth: expMonth,
+        expYear: expYear,
+        cvc: _cardCvcController.text,
+        amount: total,
+        description: 'Pedido BeniceFlutter - ${cart.items.length} productos',
+        metadata: {
+          'customer_name': _nameController.text,
+          'items_count': cart.items.length.toString(),
+        },
+      );
+
+      if (!paymentResult.success) {
+        setState(() => _cardError = paymentResult.error);
+        return;
+      }
+
+      // Payment succeeded - create order in Supabase
       final result = await ref
           .read(orderProvider.notifier)
           .createOrder(
@@ -846,6 +1138,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           context.go('/checkout/success?orderId=${order.id}');
         },
       );
+    } catch (e) {
+      setState(() => _cardError = 'Error inesperado: $e');
     } finally {
       if (mounted) {
         setState(() => _isProcessing = false);
@@ -963,6 +1257,58 @@ class _PaymentMethodChip extends StatelessWidget {
           style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
         ),
       ],
+    );
+  }
+}
+
+/// Formateador para número de tarjeta: añade espacios cada 4 dígitos
+class _CardNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 19) {
+      return oldValue;
+    }
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && i % 4 == 0) buffer.write(' ');
+      buffer.write(digits[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
+/// Formateador para fecha de caducidad: MM/AA
+class _ExpiryDateFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 4) {
+      return oldValue;
+    }
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i == 2) buffer.write('/');
+      buffer.write(digits[i]);
+    }
+
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

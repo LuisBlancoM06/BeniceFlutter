@@ -91,52 +91,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
 
-          // Grid de productos destacados
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            sliver: featuredProducts.when(
-              data: (products) => SliverGrid(
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 200,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final product = products[index];
-                    return RepaintBoundary(
-                      child: ProductCard(
-                        product: product,
-                        onTap: () => context.push('/product/${product.id}'),
-                        onAddToCart: () {
-                          ref.read(cartProvider.notifier).addToCart(product);
-                          CustomSnackBar.showSuccess(
-                            context,
-                            '${product.name} añadido al carrito',
-                          );
-                        },
+          // Grid de productos destacados (centrado)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: featuredProducts.when(
+                data: (products) {
+                  final items = products.take(6).toList();
+                  return Center(
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      alignment: WrapAlignment.center,
+                      children: items.map((product) {
+                        return SizedBox(
+                          width: 188,
+                          height: 188 / 0.7,
+                          child: RepaintBoundary(
+                            child: ProductCard(
+                              product: product,
+                              onTap: () =>
+                                  context.push('/product/${product.id}'),
+                              onAddToCart: () {
+                                ref
+                                    .read(cartProvider.notifier)
+                                    .addToCart(product);
+                                CustomSnackBar.showSuccess(
+                                  context,
+                                  '${product.name} añadido al carrito',
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  );
+                },
+                loading: () => Center(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    children: List.generate(
+                      4,
+                      (_) => const SizedBox(
+                        width: 188,
+                        height: 268,
+                        child: ProductCardShimmer(),
                       ),
-                    );
-                  },
-                  addAutomaticKeepAlives: false,
-                  childCount: products.length.clamp(0, 6),
+                    ),
+                  ),
                 ),
-              ),
-              loading: () => SliverGrid(
-                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: 200,
-                  childAspectRatio: 0.7,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => const ProductCardShimmer(),
-                  childCount: 4,
-                ),
-              ),
-              error: (error, stack) => SliverToBoxAdapter(
-                child: ErrorState(
+                error: (error, stack) => ErrorState(
                   message: 'Error al cargar productos',
                   onRetry: () => ref.invalidate(featuredProductsProvider),
                 ),

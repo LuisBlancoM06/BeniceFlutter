@@ -9,12 +9,6 @@ class AdminOrdersScreen extends ConsumerWidget {
 
   static const _statusFilters = [
     (null, 'Todos', Icons.list_alt_rounded, Color(0xFF64748B)),
-    (
-      'pendiente',
-      'Pendiente',
-      Icons.hourglass_empty_rounded,
-      Color(0xFFFFA726),
-    ),
     ('pagado', 'Pagado', Icons.credit_card_rounded, Color(0xFF42A5F5)),
     ('enviado', 'Enviado', Icons.local_shipping_rounded, Color(0xFF7E57C2)),
     ('entregado', 'Entregado', Icons.check_circle_rounded, Color(0xFF66BB6A)),
@@ -26,7 +20,7 @@ class AdminOrdersScreen extends ConsumerWidget {
     final ordersState = ref.watch(adminOrdersProvider);
 
     return DefaultTabController(
-      length: 6,
+      length: 5,
       child: Scaffold(
         backgroundColor: const Color(0xFFF1F5F9),
         body: NestedScrollView(
@@ -412,14 +406,7 @@ class _OrderCard extends ConsumerWidget {
     final notifier = ref.read(adminOrdersProvider.notifier);
     Widget? button;
 
-    if (order.status == OrderStatus.pendiente) {
-      button = _ActionButton(
-        label: 'Marcar Pagado',
-        icon: Icons.credit_card_rounded,
-        color: const Color(0xFF42A5F5),
-        onPressed: () => notifier.updateOrderStatus(order.id, 'pagado'),
-      );
-    } else if (order.status == OrderStatus.pagado) {
+    if (order.status == OrderStatus.pagado) {
       button = _ActionButton(
         label: 'Marcar Enviado',
         icon: Icons.local_shipping_rounded,

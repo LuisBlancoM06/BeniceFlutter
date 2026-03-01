@@ -1,76 +1,45 @@
 // Constantes de la aplicación Venice Pet Shop
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConstants {
   // Supabase Configuration
-  static const String supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://placeholder.supabase.co',
-  );
-  static const String supabaseAnonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'placeholder-key',
-  );
-  static const String supabaseServiceRoleKey = String.fromEnvironment(
-    'SUPABASE_SERVICE_ROLE_KEY',
-    defaultValue: '',
-  );
+  static String get supabaseUrl =>
+      dotenv.env['SUPABASE_URL'] ?? 'https://placeholder.supabase.co';
+  static String get supabaseAnonKey =>
+      dotenv.env['SUPABASE_ANON_KEY'] ?? 'placeholder-key';
+  static String get supabaseServiceRoleKey =>
+      dotenv.env['SUPABASE_SERVICE_ROLE_KEY'] ?? '';
 
   // Stripe Configuration
-  static const String stripeSecretKey = String.fromEnvironment(
-    'STRIPE_SECRET_KEY',
-    defaultValue: '',
-  );
-  static const String stripePublishableKey = String.fromEnvironment(
-    'STRIPE_PUBLISHABLE_KEY',
-    defaultValue: '',
-  );
-  static const String stripeWebhookSecret = String.fromEnvironment(
-    'STRIPE_WEBHOOK_SECRET',
-    defaultValue: '',
-  );
+  static String get stripeSecretKey => dotenv.env['STRIPE_SECRET_KEY'] ?? '';
+  static String get stripePublishableKey =>
+      dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
+  static String get stripeWebhookSecret =>
+      dotenv.env['STRIPE_WEBHOOK_SECRET'] ?? '';
 
   // Resend Email Configuration
-  static const String resendApiKey = String.fromEnvironment(
-    'RESEND_API_KEY',
-    defaultValue: '',
-  );
-  static const String fromEmail = String.fromEnvironment(
-    'FROM_EMAIL',
-    defaultValue: 'ventas@beniceflutter.com',
-  );
+  static String get resendApiKey => dotenv.env['RESEND_API_KEY'] ?? '';
+  static String get fromEmail =>
+      dotenv.env['FROM_EMAIL'] ?? 'ventas@beniceflutter.com';
 
   // Site Configuration
-  static const String publicSiteUrl = String.fromEnvironment(
-    'PUBLIC_SITE_URL',
-    defaultValue: 'http://localhost:3000',
-  );
+  static String get publicSiteUrl =>
+      dotenv.env['PUBLIC_SITE_URL'] ?? 'http://localhost:3000';
 
   // Cloudinary Configuration
-  static const String cloudinaryCloudName = String.fromEnvironment(
-    'CLOUDINARY_CLOUD_NAME',
-    defaultValue: '',
-  );
-  static const String cloudinaryApiKey = String.fromEnvironment(
-    'CLOUDINARY_API_KEY',
-    defaultValue: '',
-  );
-  static const String cloudinaryApiSecret = String.fromEnvironment(
-    'CLOUDINARY_API_SECRET',
-    defaultValue: '',
-  );
+  static String get cloudinaryCloudName =>
+      dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
+  static String get cloudinaryApiKey => dotenv.env['CLOUDINARY_API_KEY'] ?? '';
+  static String get cloudinaryApiSecret =>
+      dotenv.env['CLOUDINARY_API_SECRET'] ?? '';
 
   // Google Places API
-  static const String googlePlacesApiKey = String.fromEnvironment(
-    'GOOGLE_PLACES_API_KEY',
-    defaultValue: '',
-  );
+  static String get googlePlacesApiKey =>
+      dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
 
   // Flutter Environment
-  static const String flutterEnv = String.fromEnvironment(
-    'FLUTTER_ENV',
-    defaultValue: 'development',
-  );
+  static String get flutterEnv => dotenv.env['FLUTTER_ENV'] ?? 'development';
 
   // Data Source Mode: set to false to use live Supabase data
   static const bool useMockData = false;

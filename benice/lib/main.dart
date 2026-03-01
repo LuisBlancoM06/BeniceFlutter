@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +13,9 @@ import 'presentation/widgets/common/cookie_consent_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Cargar variables de entorno desde .env
+  await dotenv.load(fileName: '.env');
 
   // Limitar la caché de imágenes en memoria (máx 30 imágenes, 50MB)
   PaintingBinding.instance.imageCache.maximumSize = 30;

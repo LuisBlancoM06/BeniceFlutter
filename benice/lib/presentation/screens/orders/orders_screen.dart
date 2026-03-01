@@ -19,7 +19,6 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen>
   late TabController _tabController;
   final List<OrderStatus?> _statusFilters = [
     null, // Todos
-    OrderStatus.pendiente,
     OrderStatus.pagado,
     OrderStatus.enviado,
     OrderStatus.entregado,
@@ -120,28 +119,28 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen>
                     fontSize: 13,
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  tabs: [
-                    const Tab(text: 'Todos'),
-                    ...OrderStatus.values.map(
-                      (status) => Tab(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: status.color,
-                                shape: BoxShape.circle,
-                              ),
+                  tabs: _statusFilters.map((status) {
+                    if (status == null) {
+                      return const Tab(text: 'Todos');
+                    }
+                    return Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: status.color,
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(width: 6),
-                            Text(status.label),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(status.label),
+                        ],
                       ),
-                    ),
-                  ],
+                    );
+                  }).toList(),
                 ),
               ),
             ),

@@ -143,7 +143,9 @@ class SupabaseDataSource {
     final data = await query
         .range(from, to)
         .order('created_at', ascending: false);
-    return (data as List).map((e) => ProductModel.fromJson(e)).toList();
+    return (data as List)
+        .map((e) => ProductModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<ProductModel> getProductById(String id) async {
@@ -382,7 +384,11 @@ class SupabaseDataSource {
       'get_product_review_stats',
       params: {'p_product_id': productId},
     );
-    return result as Map<String, dynamic>;
+    if (result is List) {
+      if (result.isEmpty) return {};
+      return Map<String, dynamic>.from(result.first as Map);
+    }
+    return Map<String, dynamic>.from(result as Map);
   }
 
   // ==================== DESCUENTOS ====================
@@ -469,13 +475,77 @@ class SupabaseDataSource {
   // ==================== DASHBOARD ====================
 
   Future<Map<String, dynamic>> getDashboardStats() async {
-    final result = await _client.rpc('get_dashboard_stats');
-    return result as Map<String, dynamic>;
+    // Query tables directly instead of relying on RPC
+    // 1. Orders: total sales + count (only non-cancelled)
+    final ordersData = await _client
+        .from('orders')
+        .select('total, status, created_at');
+
+    final allOrders = ordersData as List;
+    final activeOrders = allOrders.where((o) => o['status'] != 'cancelado');
+    final totalSales = activeOrders.fold<double>(
+      0,
+      (sum, o) => sum + ((o['total'] as num?)?.toDouble() ?? 0),
+    );
+    final totalOrders = allOrders.length;
+
+    // 2. Products count + low stock
+    final productsData = await _client.from('products').select('stock');
+    final allProducts = productsData as List;
+    final totalProducts = allProducts.length;
+    final lowStockProducts = allProducts
+        .where((p) => (p['stock'] as num?) != null && (p['stock'] as num) <= 5)
+        .length;
+
+    // 3. Users count
+    final usersData = await _client.from('users').select('id').limit(10000);
+    final totalUsers = (usersData as List).length;
+
+    // 4. Orders by status
+    final ordersByStatus = <String, int>{};
+    for (final order in allOrders) {
+      final status = order['status']?.toString() ?? 'unknown';
+      ordersByStatus[status] = (ordersByStatus[status] ?? 0) + 1;
+    }
+
+    // 5. Sales by month (last 6 months)
+    final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
+    final recentOrders = allOrders.where((o) {
+      final created = DateTime.tryParse(o['created_at']?.toString() ?? '');
+      return created != null &&
+          created.isAfter(sixMonthsAgo) &&
+          o['status'] != 'cancelado';
+    });
+    final salesByMonth = <String, double>{};
+    for (final order in recentOrders) {
+      final created = DateTime.tryParse(order['created_at']?.toString() ?? '');
+      if (created != null) {
+        final key =
+            '${created.year}-${created.month.toString().padLeft(2, '0')}';
+        salesByMonth[key] =
+            (salesByMonth[key] ?? 0) +
+            ((order['total'] as num?)?.toDouble() ?? 0);
+      }
+    }
+
+    return {
+      'total_sales': totalSales,
+      'total_orders': totalOrders,
+      'total_users': totalUsers,
+      'total_products': totalProducts,
+      'low_stock_products': lowStockProducts,
+      'orders_by_status': ordersByStatus,
+      'sales_by_month': salesByMonth,
+    };
   }
 
   Future<Map<String, dynamic>> getOrderStatusCounts() async {
     final result = await _client.rpc('get_order_status_counts');
-    return result as Map<String, dynamic>;
+    if (result is List) {
+      if (result.isEmpty) return {};
+      return Map<String, dynamic>.from(result.first as Map);
+    }
+    return Map<String, dynamic>.from(result as Map);
   }
 
   // ==================== SITE SETTINGS ====================

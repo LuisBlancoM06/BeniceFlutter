@@ -575,6 +575,33 @@ class SupabaseAdminRepositoryImpl implements AdminRepository {
   ResultFuture<DashboardStats> getDashboardStats() async {
     try {
       final stats = await _ds.getDashboardStats();
+
+      // Parse salesByMonth safely - it may come as a Map, List, or null
+      Map<String, double> salesByMonth = {};
+      final rawSales = stats['sales_by_month'];
+      if (rawSales is Map) {
+        salesByMonth = rawSales.map(
+          (k, v) => MapEntry(k.toString(), (v as num?)?.toDouble() ?? 0),
+        );
+      } else if (rawSales is List) {
+        for (final item in rawSales) {
+          if (item is Map) {
+            final month = item['month']?.toString() ?? '';
+            final total = (item['total'] as num?)?.toDouble() ?? 0;
+            if (month.isNotEmpty) salesByMonth[month] = total;
+          }
+        }
+      }
+
+      // Parse ordersByStatus safely
+      Map<String, int> ordersByStatus = {};
+      final rawStatus = stats['orders_by_status'];
+      if (rawStatus is Map) {
+        ordersByStatus = rawStatus.map(
+          (k, v) => MapEntry(k.toString(), (v as num?)?.toInt() ?? 0),
+        );
+      }
+
       return Right(
         DashboardStats(
           totalSales: (stats['total_sales'] as num?)?.toDouble() ?? 0,
@@ -583,7 +610,8 @@ class SupabaseAdminRepositoryImpl implements AdminRepository {
           totalProducts: (stats['total_products'] as num?)?.toInt() ?? 0,
           lowStockProducts: (stats['low_stock_products'] as num?)?.toInt() ?? 0,
           recentOrders: [],
-          salesByMonth: Map<String, double>.from(stats['sales_by_month'] ?? {}),
+          salesByMonth: salesByMonth,
+          ordersByStatus: ordersByStatus,
         ),
       );
     } catch (e) {

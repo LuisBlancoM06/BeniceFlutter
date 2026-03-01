@@ -1,0 +1,31 @@
+# Build outputs
+build/
+.dart_tool/
+.packages
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Platform folders (not needed for web build)
+android/
+ios/
+linux/
+macos/
+windows/
+
+# Test
+test/
+coverage/
+
+# Misc
+*.md
+*.bat
+*.sh
+.git/
+.gitignore

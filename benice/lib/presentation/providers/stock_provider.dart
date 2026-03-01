@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/services/stock_service.dart';
@@ -10,7 +11,9 @@ final stockServiceProvider = Provider<StockService>((ref) {
 });
 
 /// Provider para el estado de stock en tiempo real
-final stockProvider = NotifierProvider<StockNotifier, StockState>(StockNotifier.new);
+final stockProvider = NotifierProvider<StockNotifier, StockState>(
+  StockNotifier.new,
+);
 
 /// Estado del stock
 class StockState {
@@ -51,45 +54,46 @@ class StockNotifier extends Notifier<StockState> {
   /// Verifica stock para un producto específico
   Future<bool> checkProductStock(String productId, int quantity) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final stockService = ref.read(stockServiceProvider);
-      final isAvailable = await stockService.checkStockAvailability(productId, quantity);
-      
+      final isAvailable = await stockService.checkStockAvailability(
+        productId,
+        quantity,
+      );
+
       state = state.copyWith(
         isLoading: false,
         stockAvailability: {...state.stockAvailability, productId: isAvailable},
       );
-      
+
       return isAvailable;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
 
   /// Verifica stock para múltiples productos
-  Future<Map<String, bool>> checkMultipleProductsStock(Map<String, int> productsQuantities) async {
+  Future<Map<String, bool>> checkMultipleProductsStock(
+    Map<String, int> productsQuantities,
+  ) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final stockService = ref.read(stockServiceProvider);
-      final availability = await stockService.checkMultipleStockAvailability(productsQuantities);
-      
+      final availability = await stockService.checkMultipleStockAvailability(
+        productsQuantities,
+      );
+
       state = state.copyWith(
         isLoading: false,
         stockAvailability: {...state.stockAvailability, ...availability},
       );
-      
+
       return availability;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return {};
     }
   }
@@ -97,22 +101,19 @@ class StockNotifier extends Notifier<StockState> {
   /// Obtiene stock actual de un producto
   Future<int> getProductStock(String productId) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final stockService = ref.read(stockServiceProvider);
       final stock = await stockService.getProductStock(productId);
-      
+
       state = state.copyWith(
         isLoading: false,
         productStocks: {...state.productStocks, productId: stock},
       );
-      
+
       return stock;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return 0;
     }
   }
@@ -120,26 +121,20 @@ class StockNotifier extends Notifier<StockState> {
   /// Valida el carrito completo para checkout
   Future<bool> validateCartForCheckout(List<CartItemModel> cartItems) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final stockService = ref.read(stockServiceProvider);
       final validation = await stockService.validateCartForCheckout(cartItems);
-      
+
       if (!validation.isValid) {
-        state = state.copyWith(
-          isLoading: false,
-          error: validation.message,
-        );
+        state = state.copyWith(isLoading: false, error: validation.message);
         return false;
       }
-      
+
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
       return false;
     }
   }
@@ -152,30 +147,27 @@ class StockNotifier extends Notifier<StockState> {
   /// Refresca el stock de múltiples productos
   Future<void> refreshStocks(List<String> productIds) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final stockService = ref.read(stockServiceProvider);
       final Map<String, int> updatedStocks = {};
-      
+
       for (final productId in productIds) {
         try {
           final stock = await stockService.getProductStock(productId);
           updatedStocks[productId] = stock;
         } catch (e) {
           // Continuar con otros productos si uno falla
-          print('Error obteniendo stock de $productId: $e');
+          debugPrint('Error obteniendo stock de $productId: $e');
         }
       }
-      
+
       state = state.copyWith(
         isLoading: false,
         productStocks: {...state.productStocks, ...updatedStocks},
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 }
