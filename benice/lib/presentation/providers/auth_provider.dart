@@ -138,12 +138,13 @@ class AuthNotifier extends Notifier<AuthState> {
     return result.fold((failure) => false, (_) => true);
   }
 
-  Future<bool> subscribeToNewsletter({required String email}) async {
+  /// Suscribe a newsletter y devuelve el código promo generado (o null si falla)
+  Future<String?> subscribeToNewsletter({required String email}) async {
     final result = await ref
         .read(authRepositoryProvider)
         .subscribeToNewsletter(email: email);
 
-    return result.fold((failure) => false, (_) => true);
+    return result.fold((failure) => null, (promoCode) => promoCode);
   }
 
   /// Refresh the current user data from the backend

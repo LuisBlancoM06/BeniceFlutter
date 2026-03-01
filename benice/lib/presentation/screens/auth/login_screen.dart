@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../providers/providers.dart';
 import '../../widgets/common/common_widgets.dart';
 
@@ -111,12 +112,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Nombre',
                             prefixIcon: Icon(Icons.person_outline),
+                            counterText: '',
                           ),
                           textCapitalization: TextCapitalization.words,
+                          maxLength: Validators.maxName,
+                          inputFormatters: [Validators.lettersAndSpaces()],
                           validator: (value) {
-                            if (!_isLogin && (value == null || value.isEmpty)) {
-                              return 'Introduce tu nombre';
-                            }
+                            if (!_isLogin) return Validators.name(value);
                             return null;
                           },
                         ),
@@ -127,17 +129,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Email',
                           prefixIcon: Icon(Icons.email_outlined),
+                          counterText: '',
                         ),
                         keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Introduce tu email';
-                          }
-                          if (!value.contains('@')) {
-                            return 'Email inválido';
-                          }
-                          return null;
-                        },
+                        maxLength: Validators.maxEmail,
+                        validator: Validators.email,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -159,15 +155,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         obscureText: _obscurePassword,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Introduce tu contraseña';
-                          }
-                          if (value.length < 6) {
-                            return 'Mínimo 6 caracteres';
-                          }
-                          return null;
-                        },
+                        maxLength: Validators.maxPassword,
+                        validator: Validators.password,
                       ),
                       if (_isLogin) ...[
                         const SizedBox(height: 8),
@@ -248,8 +237,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               decoration: const InputDecoration(
                 labelText: 'Email',
                 prefixIcon: Icon(Icons.email_outlined),
+                counterText: '',
               ),
               keyboardType: TextInputType.emailAddress,
+              maxLength: Validators.maxEmail,
             ),
           ],
         ),
@@ -261,8 +252,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ElevatedButton(
             onPressed: () async {
               final email = emailController.text.trim();
-              if (email.isEmpty || !email.contains('@')) {
-                CustomSnackBar.showError(context, 'Email inválido');
+              if (Validators.email(email) != null) {
+                CustomSnackBar.showError(context, Validators.email(email)!);
                 return;
               }
 

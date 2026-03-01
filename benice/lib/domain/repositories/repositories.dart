@@ -37,7 +37,8 @@ abstract class AuthRepository {
     String? avatarUrl,
   });
 
-  ResultVoid subscribeToNewsletter({required String email});
+  /// Suscribe a newsletter y devuelve el código promo generado
+  ResultFuture<String> subscribeToNewsletter({required String email});
 
   Stream<UserEntity?> get authStateChanges;
 }
@@ -108,7 +109,11 @@ abstract class OrderRepository {
     String? notes,
   });
 
-  ResultFuture<OrderEntity> cancelOrder(String orderId);
+  /// El cliente solicita cancelación (crea cancellation_request, NO cancela directamente)
+  ResultFuture<CancellationRequestEntity> requestCancellation(
+    String orderId, {
+    required String reason,
+  });
 
   ResultFuture<OrderEntity> requestReturn(String orderId, {String? reason});
 }
@@ -178,6 +183,17 @@ abstract class AdminRepository {
     String status, {
     String? adminNotes,
   });
+
+  // Solicitudes de Cancelación
+  ResultFuture<List<CancellationRequestEntity>> getCancellationRequests({
+    String? status,
+  });
+  ResultVoid approveCancellation(
+    String requestId,
+    String orderId, {
+    String? adminNotes,
+  });
+  ResultVoid rejectCancellation(String requestId, {String? adminNotes});
 
   // Promo Codes
   ResultFuture<List<DiscountCodeEntity>> getPromoCodes();

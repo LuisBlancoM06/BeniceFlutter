@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../../domain/entities/entities.dart';
 
 /// Tarjeta de pedido — diseño moderno
@@ -335,10 +336,10 @@ class OrderStatusBadge extends StatelessWidget {
   }
 }
 
-/// Modal de devolución
-class ReturnInfoBottomSheet extends StatelessWidget {
+/// Modal de devolución con motivo obligatorio
+class ReturnInfoBottomSheet extends StatefulWidget {
   final String orderNumber;
-  final VoidCallback onConfirm;
+  final void Function(String reason) onConfirm;
 
   const ReturnInfoBottomSheet({
     super.key,
@@ -347,90 +348,135 @@ class ReturnInfoBottomSheet extends StatelessWidget {
   });
 
   @override
+  State<ReturnInfoBottomSheet> createState() => _ReturnInfoBottomSheetState();
+}
+
+class _ReturnInfoBottomSheetState extends State<ReturnInfoBottomSheet> {
+  final _reasonController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Icono
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.assignment_return,
-                size: 40,
-                color: AppTheme.primaryColor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Título
-            Text(
-              'Devolución del Pedido $orderNumber',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            // Información
-            _InfoSection(
-              icon: Icons.location_on_outlined,
-              title: 'Dirección de envío',
-              content: AppConstants.warehouseAddress,
-            ),
-            const SizedBox(height: 16),
-            const _InfoSection(
-              icon: Icons.email_outlined,
-              title: 'Confirmación por email',
-              content:
-                  'Recibirás un email con las instrucciones detalladas para realizar la devolución.',
-            ),
-            const SizedBox(height: 16),
-            _InfoSection(
-              icon: Icons.access_time,
-              title: 'Plazo de reembolso',
-              content: AppConstants.returnDaysInfo,
-            ),
-            const SizedBox(height: 24),
-            // Botones
-            Row(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancelar'),
+                // Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      onConfirm();
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Confirmar'),
+                const SizedBox(height: 24),
+                // Icono
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(
+                    Icons.assignment_return,
+                    size: 40,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Título
+                Text(
+                  'Devolución del Pedido ${widget.orderNumber}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                // Campo de motivo
+                TextFormField(
+                  controller: _reasonController,
+                  decoration: InputDecoration(
+                    labelText: 'Motivo de la devolución *',
+                    hintText: 'Ej: Producto defectuoso, talla incorrecta...',
+                    counterText: '',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.chat_bubble_outline),
+                  ),
+                  maxLines: 3,
+                  maxLength: Validators.maxReason,
+                  validator: Validators.reason,
+                ),
+                const SizedBox(height: 16),
+                // Información
+                _InfoSection(
+                  icon: Icons.location_on_outlined,
+                  title: 'Dirección de envío',
+                  content: AppConstants.warehouseAddress,
+                ),
+                const SizedBox(height: 12),
+                const _InfoSection(
+                  icon: Icons.email_outlined,
+                  title: 'Confirmación por email',
+                  content:
+                      'Recibirás un email con las instrucciones detalladas.',
+                ),
+                const SizedBox(height: 12),
+                _InfoSection(
+                  icon: Icons.access_time,
+                  title: 'Plazo de reembolso',
+                  content: AppConstants.returnDaysInfo,
+                ),
+                const SizedBox(height: 24),
+                // Botones
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancelar'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            widget.onConfirm(_reasonController.text.trim());
+                          }
+                        },
+                        child: const Text('Confirmar'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -489,16 +535,30 @@ class _InfoSection extends StatelessWidget {
   }
 }
 
-/// Dialog de confirmación de cancelación
-class CancelOrderDialog extends StatelessWidget {
+/// Dialog de confirmación de cancelación con motivo
+class CancelOrderDialog extends StatefulWidget {
   final String orderNumber;
-  final VoidCallback onConfirm;
+  final void Function(String reason) onConfirm;
 
   const CancelOrderDialog({
     super.key,
     required this.orderNumber,
     required this.onConfirm,
   });
+
+  @override
+  State<CancelOrderDialog> createState() => _CancelOrderDialogState();
+}
+
+class _CancelOrderDialogState extends State<CancelOrderDialog> {
+  final _reasonController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -520,33 +580,54 @@ class CancelOrderDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          const Text('Cancelar Pedido'),
+          const Text('Solicitar Cancelación'),
         ],
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('¿Estás seguro de que deseas cancelar el pedido $orderNumber?'),
-          const SizedBox(height: 12),
-          const Text(
-            'El reembolso se procesará en un plazo de 3-5 días hábiles.',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-          ),
-        ],
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('¿Por qué deseas cancelar el pedido ${widget.orderNumber}?'),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _reasonController,
+              decoration: InputDecoration(
+                labelText: 'Motivo de la cancelación',
+                hintText: 'Ej: Ya no necesito el producto...',
+                counterText: '',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              maxLines: 3,
+              maxLength: Validators.maxReason,
+              validator: Validators.reason,
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Tu solicitud será revisada por el equipo. '
+              'Si se aprueba, el reembolso se procesará en 3-5 días hábiles.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('No, mantener'),
+          child: const Text('Volver'),
         ),
         ElevatedButton(
           onPressed: () {
-            onConfirm();
-            Navigator.pop(context);
+            if (_formKey.currentState!.validate()) {
+              widget.onConfirm(_reasonController.text.trim());
+              Navigator.pop(context);
+            }
           },
           style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
-          child: const Text('Sí, cancelar'),
+          child: const Text('Enviar solicitud'),
         ),
       ],
     );

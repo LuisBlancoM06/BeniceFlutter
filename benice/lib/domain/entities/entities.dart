@@ -9,9 +9,13 @@ class UserEntity extends Equatable {
   final String? fullName;
   final String? phone;
   final String? address;
+  final String? addressLine1;
+  final String? addressLine2;
   final String? city;
   final String? postalCode;
+  final String? country;
   final String? avatarUrl;
+  final String? stripeCustomerId;
   final String role; // 'user' o 'admin'
   final bool isSubscribedNewsletter;
   final DateTime createdAt;
@@ -23,9 +27,13 @@ class UserEntity extends Equatable {
     this.fullName,
     this.phone,
     this.address,
+    this.addressLine1,
+    this.addressLine2,
     this.city,
     this.postalCode,
+    this.country,
     this.avatarUrl,
+    this.stripeCustomerId,
     this.role = 'user',
     this.isSubscribedNewsletter = false,
     required this.createdAt,
@@ -40,9 +48,13 @@ class UserEntity extends Equatable {
     String? fullName,
     String? phone,
     String? address,
+    String? addressLine1,
+    String? addressLine2,
     String? city,
     String? postalCode,
+    String? country,
     String? avatarUrl,
+    String? stripeCustomerId,
     String? role,
     bool? isSubscribedNewsletter,
     DateTime? createdAt,
@@ -54,9 +66,13 @@ class UserEntity extends Equatable {
       fullName: fullName ?? this.fullName,
       phone: phone ?? this.phone,
       address: address ?? this.address,
+      addressLine1: addressLine1 ?? this.addressLine1,
+      addressLine2: addressLine2 ?? this.addressLine2,
       city: city ?? this.city,
       postalCode: postalCode ?? this.postalCode,
+      country: country ?? this.country,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      stripeCustomerId: stripeCustomerId ?? this.stripeCustomerId,
       role: role ?? this.role,
       isSubscribedNewsletter:
           isSubscribedNewsletter ?? this.isSubscribedNewsletter,
@@ -72,9 +88,13 @@ class UserEntity extends Equatable {
     fullName,
     phone,
     address,
+    addressLine1,
+    addressLine2,
     city,
     postalCode,
+    country,
     avatarUrl,
+    stripeCustomerId,
     role,
     isSubscribedNewsletter,
     createdAt,
@@ -309,7 +329,9 @@ class OrderEntity extends Equatable {
     );
   }
 
-  bool get canCancel => status == OrderStatus.pagado;
+  /// En Astro, se puede solicitar cancelación desde cualquier estado (excepto ya cancelado).
+  /// El admin decide si aprobar o rechazar la solicitud.
+  bool get canCancel => status != OrderStatus.cancelado;
   bool get canRequestReturn => status == OrderStatus.entregado;
 
   @override
@@ -537,6 +559,44 @@ class ReturnEntity extends Equatable {
     status,
     refundAmount,
     adminNotes,
+    createdAt,
+    updatedAt,
+  ];
+}
+
+/// Entidad de Solicitud de Cancelación (DB: cancellation_requests)
+class CancellationRequestEntity extends Equatable {
+  final String id;
+  final String orderId;
+  final String userId;
+  final String reason;
+  final String status; // 'pendiente', 'aprobada', 'rechazada'
+  final String? adminNotes;
+  final String? stripeRefundId;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
+  const CancellationRequestEntity({
+    required this.id,
+    required this.orderId,
+    required this.userId,
+    required this.reason,
+    this.status = 'pendiente',
+    this.adminNotes,
+    this.stripeRefundId,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
+  @override
+  List<Object?> get props => [
+    id,
+    orderId,
+    userId,
+    reason,
+    status,
+    adminNotes,
+    stripeRefundId,
     createdAt,
     updatedAt,
   ];

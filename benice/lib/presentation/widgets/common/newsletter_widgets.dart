@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 
 /// Popup de Newsletter
 class NewsletterPopup extends StatefulWidget {
-  final Future<bool> Function(String email) onSubscribe;
+  /// Callback que devuelve el código promo generado (o null si falla)
+  final Future<String?> Function(String email) onSubscribe;
 
   const NewsletterPopup({super.key, required this.onSubscribe});
 
   static Future<void> show(
     BuildContext context, {
-    required Future<bool> Function(String email) onSubscribe,
+    required Future<String?> Function(String email) onSubscribe,
   }) {
     return showDialog(
       context: context,
@@ -27,6 +29,7 @@ class _NewsletterPopupState extends State<NewsletterPopup> {
   final _emailController = TextEditingController();
   bool _isLoading = false;
   bool _isSubscribed = false;
+  String? _promoCode;
   String? _error;
 
   @override
@@ -38,8 +41,9 @@ class _NewsletterPopupState extends State<NewsletterPopup> {
   Future<void> _subscribe() async {
     final email = _emailController.text.trim();
 
-    if (email.isEmpty || !email.contains('@')) {
-      setState(() => _error = 'Introduce un email válido');
+    final emailError = Validators.email(email);
+    if (emailError != null) {
+      setState(() => _error = emailError);
       return;
     }
 
@@ -48,13 +52,14 @@ class _NewsletterPopupState extends State<NewsletterPopup> {
       _error = null;
     });
 
-    final success = await widget.onSubscribe(email);
+    final promoCode = await widget.onSubscribe(email);
 
     if (mounted) {
       setState(() {
         _isLoading = false;
-        _isSubscribed = success;
-        if (!success) _error = 'Error al suscribirse';
+        _isSubscribed = promoCode != null;
+        _promoCode = promoCode;
+        if (promoCode == null) _error = 'Error al suscribirse';
       });
     }
   }
@@ -112,9 +117,11 @@ class _NewsletterPopupState extends State<NewsletterPopup> {
         TextField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
+          maxLength: Validators.maxEmail,
           decoration: InputDecoration(
             hintText: 'Tu email',
             prefixIcon: const Icon(Icons.email_outlined),
+            counterText: '',
             errorText: _error,
           ),
         ),
@@ -185,7 +192,7 @@ class _NewsletterPopupState extends State<NewsletterPopup> {
             ),
           ),
           child: Text(
-            AppConstants.newsletterPromoCode,
+            _promoCode ?? '',
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,

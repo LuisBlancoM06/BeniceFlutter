@@ -355,6 +355,12 @@ class AdminDashboardScreen extends ConsumerWidget {
         const Color(0xFFEC4899),
       ),
       _QuickAction(
+        'Cancelaciones',
+        Icons.cancel_rounded,
+        '/admin/cancellations',
+        const Color(0xFFEF4444),
+      ),
+      _QuickAction(
         'Facturas',
         Icons.receipt_outlined,
         '/admin/invoices',

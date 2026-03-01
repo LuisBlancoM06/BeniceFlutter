@@ -404,25 +404,77 @@ class _OrderCard extends ConsumerWidget {
 
   Widget _buildActionButtons(WidgetRef ref, dynamic order) {
     final notifier = ref.read(adminOrdersProvider.notifier);
-    Widget? button;
+    final buttons = <Widget>[];
 
     if (order.status == OrderStatus.pagado) {
-      button = _ActionButton(
-        label: 'Marcar Enviado',
-        icon: Icons.local_shipping_rounded,
-        color: const Color(0xFF7E57C2),
-        onPressed: () => notifier.updateOrderStatus(order.id, 'enviado'),
+      buttons.add(
+        _ActionButton(
+          label: 'Marcar Enviado',
+          icon: Icons.local_shipping_rounded,
+          color: const Color(0xFF7E57C2),
+          onPressed: () => notifier.updateOrderStatus(order.id, 'enviado'),
+        ),
+      );
+      buttons.add(const SizedBox(height: 8));
+      buttons.add(
+        _ActionButton(
+          label: 'Cancelar Pedido',
+          icon: Icons.cancel_rounded,
+          color: const Color(0xFFEF5350),
+          onPressed: () => _showAdminCancelDialog(ref, order.id),
+        ),
       );
     } else if (order.status == OrderStatus.enviado) {
-      button = _ActionButton(
-        label: 'Marcar Entregado',
-        icon: Icons.check_circle_rounded,
-        color: const Color(0xFF66BB6A),
-        onPressed: () => notifier.updateOrderStatus(order.id, 'entregado'),
+      buttons.add(
+        _ActionButton(
+          label: 'Marcar Entregado',
+          icon: Icons.check_circle_rounded,
+          color: const Color(0xFF66BB6A),
+          onPressed: () => notifier.updateOrderStatus(order.id, 'entregado'),
+        ),
       );
     }
 
-    return button ?? const SizedBox.shrink();
+    return Column(children: buttons);
+  }
+
+  void _showAdminCancelDialog(WidgetRef ref, String orderId) {
+    final context = ref.context;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.cancel_rounded, color: Color(0xFFEF5350)),
+            SizedBox(width: 10),
+            Text('Cancelar Pedido'),
+          ],
+        ),
+        content: const Text(
+          'Se cancelará el pedido y se restaurará el stock.\n'
+          '¿Estás seguro?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Volver'),
+          ),
+          FilledButton(
+            onPressed: () {
+              ref
+                  .read(adminOrdersProvider.notifier)
+                  .updateOrderStatus(orderId, 'cancelado');
+              Navigator.pop(ctx);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEF5350),
+            ),
+            child: const Text('Cancelar Pedido'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/constants/app_constants.dart';
 import '../../domain/entities/entities.dart';
 import 'repository_providers.dart';
 
@@ -55,11 +56,13 @@ class CartNotifier extends Notifier<CartState> {
     // Verificar stock disponible antes de agregar
     if (!product.inStock || product.stock < quantity) {
       state = state.copyWith(
-        discountError: 'No hay stock suficiente para ${product.name}. Stock disponible: ${product.stock}',
+        discountError:
+            'No hay stock suficiente para ${product.name}. Stock disponible: ${product.stock}',
       );
       return;
     }
 
+    final maxQty = AppConstants.maxQuantityPerProduct;
     final existingIndex = state.cart.items.indexWhere(
       (item) => item.product.id == product.id,
     );
@@ -69,16 +72,18 @@ class CartNotifier extends Notifier<CartState> {
     if (existingIndex >= 0) {
       newItems = [...state.cart.items];
       final existingItem = newItems[existingIndex];
-      final newQuantity = existingItem.quantity + quantity;
-      
+      // Cap at maxQty (como Astro: 99) y verificar stock
+      final newQuantity = (existingItem.quantity + quantity).clamp(1, maxQty);
+
       // Verificar stock para la cantidad total
       if (product.stock < newQuantity) {
         state = state.copyWith(
-          discountError: 'No hay stock suficiente para ${product.name}. Stock disponible: ${product.stock}',
+          discountError:
+              'No hay stock suficiente para ${product.name}. Stock disponible: ${product.stock}',
         );
         return;
       }
-      
+
       newItems[existingIndex] = CartItemEntity(
         id: existingItem.id,
         product: existingItem.product,
@@ -90,7 +95,7 @@ class CartNotifier extends Notifier<CartState> {
         CartItemEntity(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           product: product,
-          quantity: quantity,
+          quantity: quantity.clamp(1, maxQty),
         ),
       ];
     }
@@ -109,15 +114,22 @@ class CartNotifier extends Notifier<CartState> {
       return;
     }
 
+    // Cap at maxQty (como Astro: 99)
+    final cappedQuantity = quantity.clamp(
+      1,
+      AppConstants.maxQuantityPerProduct,
+    );
+
     // Encontrar el producto para verificar stock
     final cartItem = state.cart.items.firstWhere(
       (item) => item.product.id == productId,
     );
-    
+
     // Verificar stock disponible
-    if (cartItem.product.stock < quantity) {
+    if (cartItem.product.stock < cappedQuantity) {
       state = state.copyWith(
-        discountError: 'No hay stock suficiente para ${cartItem.product.name}. Stock disponible: ${cartItem.product.stock}',
+        discountError:
+            'No hay stock suficiente para ${cartItem.product.name}. Stock disponible: ${cartItem.product.stock}',
       );
       return;
     }
@@ -127,7 +139,7 @@ class CartNotifier extends Notifier<CartState> {
         return CartItemEntity(
           id: item.id,
           product: item.product,
-          quantity: quantity,
+          quantity: cappedQuantity,
         );
       }
       return item;
@@ -194,15 +206,13 @@ class CartNotifier extends Notifier<CartState> {
     try {
       // Limpiar errores anteriores
       state = state.copyWith(discountError: null);
-      
+
       // Verificar que el carrito no esté vacío
       if (state.cart.items.isEmpty) {
-        state = state.copyWith(
-          discountError: 'El carrito está vacío',
-        );
+        state = state.copyWith(discountError: 'El carrito está vacío');
         return false;
       }
-      
+
       // Verificar stock para cada item del carrito
       for (final item in state.cart.items) {
         if (!item.product.inStock) {
@@ -211,22 +221,23 @@ class CartNotifier extends Notifier<CartState> {
           );
           return false;
         }
-        
+
         if (item.product.stock < item.quantity) {
-          final availableQuantity = item.product.stock > 0 ? item.product.stock : 0;
+          final availableQuantity = item.product.stock > 0
+              ? item.product.stock
+              : 0;
           state = state.copyWith(
-            discountError: 'Stock insuficiente para ${item.product.name}. Stock disponible: $availableQuantity',
+            discountError:
+                'Stock insuficiente para ${item.product.name}. Stock disponible: $availableQuantity',
           );
           return false;
         }
       }
-      
+
       // Si llegamos aquí, el carrito es válido
       return true;
     } catch (e) {
-      state = state.copyWith(
-        discountError: 'Error validando carrito: $e',
-      );
+      state = state.copyWith(discountError: 'Error validando carrito: $e');
       return false;
     }
   }
@@ -257,5 +268,7 @@ final cartItemCountProvider = Provider<int>((ref) {
 /// Provider del total del carrito
 final cartTotalProvider = Provider<double>((ref) {
   final cartState = ref.watch(cartProvider);
-  return cartState.cart.subtotal - cartState.discount + cartState.cart.shippingCost;
+  return cartState.cart.subtotal -
+      cartState.discount +
+      cartState.cart.shippingCost;
 });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/validators.dart';
 import '../../providers/providers.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -141,9 +142,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         decoration: _inputDecoration(
                           'Nombre completo',
                           Icons.person_outline,
-                        ),
-                        validator: (v) =>
-                            v == null || v.isEmpty ? 'Ingresa tu nombre' : null,
+                        ).copyWith(counterText: ''),
+                        maxLength: Validators.maxName,
+                        inputFormatters: [Validators.lettersAndSpaces()],
+                        textCapitalization: TextCapitalization.words,
+                        validator: Validators.name,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
@@ -153,12 +156,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         decoration: _inputDecoration(
                           'Email',
                           Icons.email_outlined,
-                        ),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) return 'Ingresa tu email';
-                          if (!v.contains('@')) return 'Email inválido';
-                          return null;
-                        },
+                        ).copyWith(counterText: ''),
+                        maxLength: Validators.maxEmail,
+                        validator: Validators.email,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
@@ -168,7 +168,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         decoration: _inputDecoration(
                           'Teléfono (opcional)',
                           Icons.phone_outlined,
-                        ),
+                        ).copyWith(counterText: ''),
+                        maxLength: Validators.maxPhone,
+                        inputFormatters: [Validators.phoneChars()],
+                        validator: Validators.phoneOptional,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
@@ -191,13 +194,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 ),
                               ),
                             ),
-                        validator: (v) {
-                          if (v == null || v.isEmpty) {
-                            return 'Ingresa una contraseña';
-                          }
-                          if (v.length < 6) return 'Mínimo 6 caracteres';
-                          return null;
-                        },
+                        validator: Validators.password,
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 16),
@@ -221,12 +218,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 ),
                               ),
                             ),
-                        validator: (v) {
-                          if (v != _passwordController.text) {
-                            return 'Las contraseñas no coinciden';
-                          }
-                          return null;
-                        },
+                        validator: (v) => Validators.passwordConfirm(
+                          v,
+                          _passwordController.text,
+                        ),
                       ),
                       const SizedBox(height: 16),
 

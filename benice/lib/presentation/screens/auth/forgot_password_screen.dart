@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/validators.dart';
 import '../../providers/providers.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -24,12 +25,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   Future<void> _sendResetEmail() async {
     final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
+    final emailError = Validators.email(email);
+    if (emailError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Introduce un email válido'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(emailError), backgroundColor: Colors.red),
       );
       return;
     }
@@ -121,10 +120,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
+          maxLength: Validators.maxEmail,
           decoration: InputDecoration(
             labelText: 'Email',
             hintText: 'tu@email.com',
             prefixIcon: const Icon(Icons.email_outlined),
+            counterText: '',
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../widgets/common/common_widgets.dart';
 
 class ContactScreen extends ConsumerStatefulWidget {
@@ -123,8 +124,12 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Nombre *',
                       prefixIcon: Icon(Icons.person),
+                      counterText: '',
                     ),
-                    validator: (v) => v?.isEmpty == true ? 'Requerido' : null,
+                    maxLength: Validators.maxName,
+                    inputFormatters: [Validators.lettersAndSpaces()],
+                    textCapitalization: TextCapitalization.words,
+                    validator: Validators.name,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -132,10 +137,11 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Email *',
                       prefixIcon: Icon(Icons.email),
+                      counterText: '',
                     ),
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) =>
-                        v?.contains('@') != true ? 'Email inválido' : null,
+                    maxLength: Validators.maxEmail,
+                    validator: Validators.email,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -143,8 +149,12 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Teléfono',
                       prefixIcon: Icon(Icons.phone),
+                      counterText: '',
                     ),
                     keyboardType: TextInputType.phone,
+                    maxLength: Validators.maxPhone,
+                    inputFormatters: [Validators.phoneChars()],
+                    validator: Validators.phoneOptional,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -152,8 +162,10 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Asunto *',
                       prefixIcon: Icon(Icons.subject),
+                      counterText: '',
                     ),
-                    validator: (v) => v?.isEmpty == true ? 'Requerido' : null,
+                    maxLength: Validators.maxSubject,
+                    validator: Validators.subject,
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -162,9 +174,11 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                       labelText: 'Mensaje *',
                       prefixIcon: Icon(Icons.message),
                       alignLabelWithHint: true,
+                      counterText: '',
                     ),
                     maxLines: 5,
-                    validator: (v) => v?.isEmpty == true ? 'Requerido' : null,
+                    maxLength: Validators.maxMessage,
+                    validator: Validators.message,
                   ),
                   const SizedBox(height: 24),
                   SizedBox(

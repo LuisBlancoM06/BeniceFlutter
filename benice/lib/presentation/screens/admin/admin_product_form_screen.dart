@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/utils/validators.dart';
 import '../../providers/providers.dart';
 
 /// Pantalla para crear/editar un producto (admin)
@@ -193,9 +194,9 @@ class _AdminProductFormScreenState
                                 decoration: _inputDeco(
                                   'Nombre del producto *',
                                   Icons.label_rounded,
-                                ),
-                                validator: (v) =>
-                                    v == null || v.isEmpty ? 'Requerido' : null,
+                                ).copyWith(counterText: ''),
+                                maxLength: Validators.maxProductName,
+                                validator: Validators.productName,
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
@@ -203,10 +204,10 @@ class _AdminProductFormScreenState
                                 decoration: _inputDeco(
                                   'Descripción *',
                                   Icons.description_rounded,
-                                ),
+                                ).copyWith(counterText: ''),
                                 maxLines: 3,
-                                validator: (v) =>
-                                    v == null || v.isEmpty ? 'Requerido' : null,
+                                maxLength: Validators.maxProductDesc,
+                                validator: Validators.productDescription,
                               ),
                               const SizedBox(height: 14),
                               TextFormField(
@@ -214,7 +215,9 @@ class _AdminProductFormScreenState
                                 decoration: _inputDeco(
                                   'URL de imagen',
                                   Icons.image_rounded,
-                                ),
+                                ).copyWith(counterText: ''),
+                                maxLength: Validators.maxUrl,
+                                validator: Validators.url,
                               ),
                             ],
                           ),
@@ -233,17 +236,13 @@ class _AdminProductFormScreenState
                                       decoration: _inputDeco(
                                         'Precio (€) *',
                                         Icons.euro_rounded,
-                                      ),
+                                      ).copyWith(counterText: ''),
                                       keyboardType: TextInputType.number,
-                                      validator: (v) {
-                                        if (v == null || v.isEmpty) {
-                                          return 'Requerido';
-                                        }
-                                        if (double.tryParse(v) == null) {
-                                          return 'Número inválido';
-                                        }
-                                        return null;
-                                      },
+                                      maxLength: Validators.maxPrice,
+                                      inputFormatters: [
+                                        Validators.decimalNumber(),
+                                      ],
+                                      validator: Validators.price,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -253,8 +252,32 @@ class _AdminProductFormScreenState
                                       decoration: _inputDeco(
                                         'Precio oferta (€)',
                                         Icons.local_offer_rounded,
-                                      ),
+                                      ).copyWith(counterText: ''),
                                       keyboardType: TextInputType.number,
+                                      maxLength: Validators.maxPrice,
+                                      inputFormatters: [
+                                        Validators.decimalNumber(),
+                                      ],
+                                      validator: (v) {
+                                        final base = Validators.priceOptional(
+                                          v,
+                                        );
+                                        if (base != null) return base;
+                                        if (v != null &&
+                                            v.isNotEmpty &&
+                                            _priceController.text.isNotEmpty) {
+                                          final discount = double.tryParse(v);
+                                          final price = double.tryParse(
+                                            _priceController.text,
+                                          );
+                                          if (discount != null &&
+                                              price != null &&
+                                              discount >= price) {
+                                            return 'Debe ser menor que el precio';
+                                          }
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ),
                                 ],
@@ -268,17 +291,13 @@ class _AdminProductFormScreenState
                                       decoration: _inputDeco(
                                         'Stock *',
                                         Icons.inventory_rounded,
-                                      ),
+                                      ).copyWith(counterText: ''),
                                       keyboardType: TextInputType.number,
-                                      validator: (v) {
-                                        if (v == null || v.isEmpty) {
-                                          return 'Requerido';
-                                        }
-                                        if (int.tryParse(v) == null) {
-                                          return 'Entero inválido';
-                                        }
-                                        return null;
-                                      },
+                                      maxLength: Validators.maxStock,
+                                      inputFormatters: [
+                                        Validators.digitsOnly(),
+                                      ],
+                                      validator: Validators.stock,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -288,7 +307,9 @@ class _AdminProductFormScreenState
                                       decoration: _inputDeco(
                                         'Marca',
                                         Icons.business_rounded,
-                                      ),
+                                      ).copyWith(counterText: ''),
+                                      maxLength: Validators.maxBrand,
+                                      validator: Validators.brand,
                                     ),
                                   ),
                                 ],

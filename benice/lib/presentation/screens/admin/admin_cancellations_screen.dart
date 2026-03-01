@@ -4,12 +4,12 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/validators.dart';
 import '../../providers/providers.dart';
 
-class AdminReturnsScreen extends ConsumerWidget {
-  const AdminReturnsScreen({super.key});
+class AdminCancellationsScreen extends ConsumerWidget {
+  const AdminCancellationsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final returnsState = ref.watch(adminReturnsProvider);
+    final cancState = ref.watch(adminCancellationsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -18,13 +18,13 @@ class AdminReturnsScreen extends ConsumerWidget {
           SliverAppBar(
             expandedHeight: 130,
             pinned: true,
-            backgroundColor: const Color(0xFF831843),
+            backgroundColor: const Color(0xFF7F1D1D),
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF831843), Color(0xFFEC4899)],
+                    colors: [Color(0xFF7F1D1D), Color(0xFFEF4444)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -41,7 +41,7 @@ class AdminReturnsScreen extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
-                            Icons.assignment_return_rounded,
+                            Icons.cancel_rounded,
                             color: Colors.white,
                             size: 22,
                           ),
@@ -52,7 +52,7 @@ class AdminReturnsScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Devoluciones',
+                              'Cancelaciones',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 20,
@@ -61,7 +61,7 @@ class AdminReturnsScreen extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              '${returnsState.returns.length} devoluciones',
+                              '${cancState.requests.length} solicitudes',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.7),
                                 fontSize: 13,
@@ -77,11 +77,11 @@ class AdminReturnsScreen extends ConsumerWidget {
             ),
           ),
 
-          if (returnsState.isLoading)
+          if (cancState.isLoading)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (returnsState.returns.isEmpty)
+          else if (cancState.requests.isEmpty)
             SliverFillRemaining(
               child: Center(
                 child: Column(
@@ -90,18 +90,18 @@ class AdminReturnsScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFFCE7F3),
+                        color: Color(0xFFFEE2E2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
-                        Icons.assignment_return_outlined,
+                        Icons.check_circle_outline,
                         size: 48,
-                        color: Color(0xFFEC4899),
+                        color: Color(0xFFEF4444),
                       ),
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'No hay devoluciones',
+                      'No hay solicitudes',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -109,7 +109,7 @@ class AdminReturnsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Las solicitudes aparecerán aquí',
+                      'Las solicitudes de cancelación aparecerán aquí',
                       style: TextStyle(color: AppTheme.textSecondary),
                     ),
                   ],
@@ -121,9 +121,9 @@ class AdminReturnsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  final ret = returnsState.returns[index];
-                  return _ReturnCard(ret: ret);
-                }, childCount: returnsState.returns.length),
+                  final req = cancState.requests[index];
+                  return _CancellationCard(req: req);
+                }, childCount: cancState.requests.length),
               ),
             ),
         ],
@@ -132,12 +132,12 @@ class AdminReturnsScreen extends ConsumerWidget {
   }
 }
 
-class _ReturnCard extends ConsumerWidget {
-  final dynamic ret;
-  const _ReturnCard({required this.ret});
+class _CancellationCard extends ConsumerWidget {
+  final dynamic req;
+  const _CancellationCard({required this.req});
 
   static const _statusConfig = {
-    'solicitada': (
+    'pendiente': (
       Color(0xFFF59E0B),
       Icons.hourglass_empty_rounded,
       Color(0xFFFEF3C7),
@@ -148,16 +148,11 @@ class _ReturnCard extends ConsumerWidget {
       Color(0xFFD1FAE5),
     ),
     'rechazada': (Color(0xFFEF4444), Icons.cancel_rounded, Color(0xFFFEE2E2)),
-    'completada': (
-      Color(0xFF7C3AED),
-      Icons.verified_rounded,
-      Color(0xFFEDE9FE),
-    ),
   };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config = _statusConfig[ret.status];
+    final config = _statusConfig[req.status];
     final color = config?.$1 ?? const Color(0xFF64748B);
     final icon = config?.$2 ?? Icons.circle;
     final bgColor = config?.$3 ?? const Color(0xFFF1F5F9);
@@ -194,7 +189,7 @@ class _ReturnCard extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Pedido: ${ret.orderId.substring(0, 8)}...',
+                    'Pedido: ${req.orderId.substring(0, 8)}...',
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
@@ -212,7 +207,7 @@ class _ReturnCard extends ConsumerWidget {
                     border: Border.all(color: color.withValues(alpha: 0.3)),
                   ),
                   child: Text(
-                    ret.status[0].toUpperCase() + ret.status.substring(1),
+                    req.status[0].toUpperCase() + req.status.substring(1),
                     style: TextStyle(
                       color: color,
                       fontSize: 12,
@@ -234,6 +229,7 @@ class _ReturnCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Icon(
                         Icons.chat_bubble_outline_rounded,
@@ -243,36 +239,18 @@ class _ReturnCard extends ConsumerWidget {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          ret.reason,
+                          req.reason.isNotEmpty
+                              ? req.reason
+                              : 'Sin motivo indicado',
                           style: const TextStyle(fontSize: 13),
                         ),
                       ),
                     ],
                   ),
-                  if (ret.refundAmount != null) ...[
+                  if (req.adminNotes != null) ...[
                     const SizedBox(height: 6),
                     Row(
-                      children: [
-                        const Icon(
-                          Icons.euro_rounded,
-                          size: 14,
-                          color: Color(0xFF10B981),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Reembolso: ${ret.refundAmount!.toStringAsFixed(2)}€',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF10B981),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (ret.adminNotes != null) ...[
-                    const SizedBox(height: 6),
-                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(
                           Icons.notes_rounded,
@@ -282,7 +260,7 @@ class _ReturnCard extends ConsumerWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            ret.adminNotes!,
+                            'Admin: ${req.adminNotes!}',
                             style: const TextStyle(
                               color: AppTheme.textSecondary,
                               fontSize: 12,
@@ -295,15 +273,15 @@ class _ReturnCard extends ConsumerWidget {
                 ],
               ),
             ),
-            if (ret.status == 'solicitada') ...[
+            if (req.status == 'pendiente') ...[
               const SizedBox(height: 14),
               Row(
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () => ref
-                          .read(adminReturnsProvider.notifier)
-                          .updateStatus(ret.id, 'aprobada'),
+                      onPressed: () {
+                        _showApproveDialog(context, ref, req.id, req.orderId);
+                      },
                       icon: const Icon(Icons.check_rounded, size: 18),
                       label: const Text('Aprobar'),
                       style: FilledButton.styleFrom(
@@ -318,7 +296,9 @@ class _ReturnCard extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _showRejectDialog(context, ref, ret.id),
+                      onPressed: () {
+                        _showRejectDialog(context, ref, req.id);
+                      },
                       icon: const Icon(Icons.close_rounded, size: 18),
                       label: const Text('Rechazar'),
                       style: OutlinedButton.styleFrom(
@@ -340,13 +320,54 @@ class _ReturnCard extends ConsumerWidget {
     );
   }
 
-  void _showRejectDialog(BuildContext context, WidgetRef ref, String returnId) {
+  void _showApproveDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String requestId,
+    String orderId,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Aprobar cancelación'),
+        content: const Text(
+          'Se cancelará el pedido y se restaurará el stock.\n'
+          '¿Estás seguro?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Volver'),
+          ),
+          FilledButton(
+            onPressed: () {
+              ref
+                  .read(adminCancellationsProvider.notifier)
+                  .approveCancellation(requestId, orderId);
+              Navigator.pop(ctx);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF10B981),
+            ),
+            child: const Text('Aprobar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRejectDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String requestId,
+  ) {
     final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Rechazar devolución'),
+        title: const Text('Rechazar cancelación'),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
@@ -372,8 +393,8 @@ class _ReturnCard extends ConsumerWidget {
                 return;
               }
               ref
-                  .read(adminReturnsProvider.notifier)
-                  .updateStatus(returnId, 'rechazada', notes: controller.text);
+                  .read(adminCancellationsProvider.notifier)
+                  .rejectCancellation(requestId, notes: controller.text);
               Navigator.pop(ctx);
             },
             style: FilledButton.styleFrom(

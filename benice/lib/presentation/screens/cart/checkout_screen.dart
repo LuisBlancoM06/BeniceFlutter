@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../domain/services/stripe_payment_service.dart';
 import '../../providers/providers.dart';
@@ -217,8 +218,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           controller: _nameController,
           label: 'Nombre completo',
           icon: Icons.person_outline,
-          validator: (value) =>
-              value == null || value.isEmpty ? 'Ingresa tu nombre' : null,
+          maxLength: Validators.maxName,
+          textCapitalization: TextCapitalization.words,
+          inputFormatters: [Validators.lettersAndSpaces()],
+          validator: Validators.name,
         ),
         const SizedBox(height: 12),
         _buildTextField(
@@ -226,19 +229,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           label: 'Telefono',
           icon: Icons.phone_outlined,
           keyboardType: TextInputType.phone,
-          validator: (value) {
-            if (value == null || value.isEmpty) return 'Ingresa tu telefono';
-            if (value.length < 9) return 'Numero invalido';
-            return null;
-          },
+          maxLength: Validators.maxPhone,
+          inputFormatters: [Validators.phoneChars()],
+          validator: Validators.phone,
         ),
         const SizedBox(height: 12),
         _buildTextField(
           controller: _addressController,
           label: 'Direccion',
           icon: Icons.home_outlined,
-          validator: (value) =>
-              value == null || value.isEmpty ? 'Ingresa tu direccion' : null,
+          maxLength: Validators.maxAddress,
+          validator: Validators.address,
         ),
         const SizedBox(height: 12),
         Row(
@@ -249,8 +250,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 controller: _cityController,
                 label: 'Ciudad',
                 icon: Icons.location_city_outlined,
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Requerido' : null,
+                maxLength: Validators.maxCity,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: [Validators.lettersAndSpaces()],
+                validator: Validators.city,
               ),
             ),
             const SizedBox(width: 12),
@@ -260,8 +263,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 label: 'C.P.',
                 icon: Icons.pin_drop_outlined,
                 keyboardType: TextInputType.number,
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Requerido' : null,
+                maxLength: Validators.maxPostalCode,
+                inputFormatters: [Validators.digitsOnly()],
+                validator: Validators.postalCode,
               ),
             ),
           ],
@@ -272,6 +276,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           label: 'Notas del pedido (opcional)',
           icon: Icons.note_outlined,
           maxLines: 3,
+          maxLength: Validators.maxNotes,
+          validator: Validators.notes,
         ),
       ],
     );
@@ -464,7 +470,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 inputFormatters: [_CardNumberFormatter()],
                 decoration: InputDecoration(
                   labelText: 'Número de tarjeta',
-                  hintText: '4242 4242 4242 4242',
+                  hintText: '0000 0000 0000 0000',
                   prefixIcon: const Icon(Icons.credit_card),
                   suffixIcon: _buildCardBrandIcon(),
                   border: OutlineInputBorder(
@@ -490,7 +496,28 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 ),
                 validator: (v) {
                   final cleaned = v?.replaceAll(' ', '') ?? '';
+                  if (cleaned.isEmpty) {
+                    return 'Introduce el número de tarjeta';
+                  }
+                  if (!RegExp(r'^\d+$').hasMatch(cleaned)) {
+                    return 'Solo se permiten números';
+                  }
                   if (cleaned.length < 13 || cleaned.length > 19) {
+                    return 'Número de tarjeta inválido (13-19 dígitos)';
+                  }
+                  // Luhn check
+                  int sum = 0;
+                  bool alternate = false;
+                  for (int i = cleaned.length - 1; i >= 0; i--) {
+                    int n = int.parse(cleaned[i]);
+                    if (alternate) {
+                      n *= 2;
+                      if (n > 9) n -= 9;
+                    }
+                    sum += n;
+                    alternate = !alternate;
+                  }
+                  if (sum % 10 != 0) {
                     return 'Número de tarjeta inválido';
                   }
                   return null;
@@ -535,6 +562,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                             !RegExp(r'^\d{2}/\d{2}$').hasMatch(v)) {
                           return 'Formato MM/AA';
                         }
+                        final parts = v.split('/');
+                        final month = int.tryParse(parts[0]) ?? 0;
+                        final year = int.tryParse(parts[1]) ?? 0;
+                        if (month < 1 || month > 12) {
+                          return 'Mes inválido (01-12)';
+                        }
+                        final now = DateTime.now();
+                        final expYear = 2000 + year;
+                        if (expYear < now.year ||
+                            (expYear == now.year && month < now.month)) {
+                          return 'Tarjeta caducada';
+                        }
                         return null;
                       },
                     ),
@@ -575,8 +614,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.length < 3) {
-                          return 'CVC inválido';
+                        if (v == null || v.isEmpty) {
+                          return 'Introduce el CVC';
+                        }
+                        if (!RegExp(r'^\d{3,4}$').hasMatch(v)) {
+                          return 'CVC: 3 o 4 dígitos';
                         }
                         return null;
                       },
@@ -614,28 +656,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        // Test card hint
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue[200]!),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.blue, size: 18),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Tarjeta de prueba: 4242 4242 4242 4242 | 12/34 | CVC: 123',
-                  style: TextStyle(color: Colors.blue, fontSize: 12),
-                ),
-              ),
             ],
           ),
         ),
@@ -873,10 +893,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         Expanded(
           child: TextField(
             controller: _promoController,
+            maxLength: Validators.maxPromoCode,
+            inputFormatters: [Validators.alphanumericCode()],
+            textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
               hintText: 'Introduce tu codigo',
               prefixIcon: const Icon(Icons.local_offer_outlined, size: 20),
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              counterText: '',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppTheme.borderRadiusMd),
               ),
@@ -1023,16 +1047,23 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
+    int? maxLength,
     String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters,
+    TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      maxLength: maxLength,
       validator: validator,
+      inputFormatters: inputFormatters,
+      textCapitalization: textCapitalization,
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon),
+        counterText: '',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTheme.borderRadiusMd),
         ),
@@ -1235,7 +1266,7 @@ class _CardNumberFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    if (digits.length > 19) {
+    if (digits.length > 16) {
       return oldValue;
     }
 

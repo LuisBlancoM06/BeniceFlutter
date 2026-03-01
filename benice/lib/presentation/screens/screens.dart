@@ -54,6 +54,7 @@ export 'admin/admin_product_form_screen.dart';
 export 'admin/admin_ofertas_screen.dart';
 export 'admin/admin_newsletter_screen.dart';
 export 'admin/admin_returns_screen.dart';
+export 'admin/admin_cancellations_screen.dart';
 export 'admin/admin_invoices_screen.dart';
 export 'admin/admin_visits_screen.dart';
 export 'admin/admin_settings_screen.dart';

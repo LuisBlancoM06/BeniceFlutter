@@ -428,7 +428,7 @@ class OrderDetailScreen extends ConsumerWidget {
         // Botón de cancelar (solo si está pagado)
         if (order.status == OrderStatus.pagado)
           PrimaryButton(
-            label: 'Cancelar Pedido',
+            label: 'Solicitar Cancelación',
             icon: Icons.cancel_outlined,
             backgroundColor: AppTheme.errorColor,
             onPressed: () {
@@ -436,10 +436,10 @@ class OrderDetailScreen extends ConsumerWidget {
                 context: context,
                 builder: (context) => CancelOrderDialog(
                   orderNumber: order.orderNumber,
-                  onConfirm: () async {
+                  onConfirm: (reason) async {
                     final result = await ref
                         .read(orderProvider.notifier)
-                        .cancelOrder(order.id);
+                        .requestCancellation(order.id, reason: reason);
                     result.fold(
                       (failure) {
                         CustomSnackBar.showError(context, failure.message);
@@ -447,7 +447,7 @@ class OrderDetailScreen extends ConsumerWidget {
                       (_) {
                         CustomSnackBar.showSuccess(
                           context,
-                          'Pedido cancelado correctamente',
+                          'Solicitud de cancelación enviada. El equipo la revisará pronto.',
                         );
                         ref.invalidate(orderDetailProvider(orderId));
                       },
@@ -472,8 +472,10 @@ class OrderDetailScreen extends ConsumerWidget {
                 ),
                 builder: (context) => ReturnInfoBottomSheet(
                   orderNumber: order.orderNumber,
-                  onConfirm: () {
-                    ref.read(orderProvider.notifier).requestReturn(order.id);
+                  onConfirm: (reason) {
+                    ref
+                        .read(orderProvider.notifier)
+                        .requestReturn(order.id, reason: reason);
                     Navigator.pop(context);
                     CustomSnackBar.showSuccess(
                       context,

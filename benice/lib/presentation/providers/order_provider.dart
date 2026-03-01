@@ -84,37 +84,38 @@ class OrdersNotifier extends Notifier<OrdersState> {
     return result;
   }
 
-  Future<Either<Failure, OrderEntity>> cancelOrder(String orderId) async {
+  Future<Either<Failure, CancellationRequestEntity>> requestCancellation(
+    String orderId, {
+    required String reason,
+  }) async {
     state = state.copyWith(isLoading: true);
 
-    final result = await ref.read(orderRepositoryProvider).cancelOrder(orderId);
+    final result = await ref
+        .read(orderRepositoryProvider)
+        .requestCancellation(orderId, reason: reason);
 
     result.fold(
       (failure) => state = state.copyWith(
         isLoading: false,
         errorMessage: failure.message,
       ),
-      (cancelledOrder) {
-        final updatedOrders = state.orders.map((order) {
-          if (order.id == orderId) {
-            return cancelledOrder;
-          }
-          return order;
-        }).toList();
-
-        state = state.copyWith(orders: updatedOrders, isLoading: false);
+      (_) {
+        state = state.copyWith(isLoading: false);
       },
     );
 
     return result;
   }
 
-  Future<Either<Failure, OrderEntity>> requestReturn(String orderId) async {
+  Future<Either<Failure, OrderEntity>> requestReturn(
+    String orderId, {
+    required String reason,
+  }) async {
     state = state.copyWith(isLoading: true);
 
     final result = await ref
         .read(orderRepositoryProvider)
-        .requestReturn(orderId);
+        .requestReturn(orderId, reason: reason);
 
     result.fold(
       (failure) => state = state.copyWith(

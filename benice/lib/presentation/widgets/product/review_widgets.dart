@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../../domain/entities/entities.dart';
 import '../../providers/review_provider.dart';
 
@@ -421,8 +422,10 @@ class _CreateReviewFormState extends ConsumerState<CreateReviewForm> {
             TextField(
               controller: _commentController,
               maxLines: 3,
+              maxLength: Validators.maxReviewComment,
               decoration: InputDecoration(
                 hintText: 'Cuéntanos tu experiencia con el producto...',
+                counterText: '',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppTheme.borderRadiusSm),
                 ),

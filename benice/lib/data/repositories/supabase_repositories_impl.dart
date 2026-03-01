@@ -126,10 +126,10 @@ class SupabaseAuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  ResultVoid subscribeToNewsletter({required String email}) async {
+  ResultFuture<String> subscribeToNewsletter({required String email}) async {
     try {
-      await _ds.subscribeNewsletter(email);
-      return const Right(null);
+      final promoCode = await _ds.subscribeNewsletter(email);
+      return Right(promoCode);
     } catch (e) {
       return Left(ServerFailure(message: _parseError(e)));
     }
@@ -362,11 +362,23 @@ class SupabaseOrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  ResultFuture<OrderEntity> cancelOrder(String orderId) async {
+  ResultFuture<CancellationRequestEntity> requestCancellation(
+    String orderId, {
+    required String reason,
+  }) async {
     try {
-      await _ds.cancelOrderRpc(orderId);
-      final order = await _ds.getOrderById(orderId);
-      return Right(order);
+      if (_userId == null) {
+        return const Left(AuthFailure(message: 'Usuario no autenticado'));
+      }
+
+      final request = await _ds.createCancellationRequest({
+        'order_id': orderId,
+        'user_id': _userId,
+        'reason': reason,
+        'status': 'pendiente',
+      });
+
+      return Right(request);
     } catch (e) {
       return Left(ServerFailure(message: _parseError(e)));
     }
@@ -683,6 +695,53 @@ class SupabaseAdminRepositoryImpl implements AdminRepository {
   }) async {
     try {
       await _ds.updateReturnStatus(returnId, status, adminNotes: adminNotes);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  ResultFuture<List<CancellationRequestEntity>> getCancellationRequests({
+    String? status,
+  }) async {
+    try {
+      final requests = await _ds.getCancellationRequests(status: status);
+      return Right(requests);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  ResultVoid approveCancellation(
+    String requestId,
+    String orderId, {
+    String? adminNotes,
+  }) async {
+    try {
+      // 1. Ejecutar RPC para cancelar el pedido y restaurar stock
+      await _ds.cancelOrderRpc(orderId);
+      // 2. Actualizar el estado de la solicitud de cancelación
+      await _ds.updateCancellationRequestStatus(
+        requestId,
+        'aprobada',
+        adminNotes: adminNotes,
+      );
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  ResultVoid rejectCancellation(String requestId, {String? adminNotes}) async {
+    try {
+      await _ds.updateCancellationRequestStatus(
+        requestId,
+        'rechazada',
+        adminNotes: adminNotes,
+      );
       return const Right(null);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));

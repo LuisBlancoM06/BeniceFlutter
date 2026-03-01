@@ -56,12 +56,14 @@ class AppConstants {
   // Paginación
   static const int productsPerPage = 20;
 
-  // Carrito
-  static const int maxQuantityPerProduct = 10;
+  // Carrito (mismo límite que Astro: 99)
+  static const int maxQuantityPerProduct = 99;
 
-  // Newsletter
-  static const String newsletterPromoCode = 'BIENVENIDO10';
+  // Newsletter (cada suscriptor recibe un código único)
+  static const String newsletterPromoCodePrefix = 'BIENVENIDO';
   static const int newsletterDiscountPercent = 10;
+  static const int newsletterPromoMaxUses = 1;
+  static const int newsletterPromoDaysValid = 30;
 
   // Envío (mismos valores que Astro)
   static const double freeShippingMinAmount = 49.0;

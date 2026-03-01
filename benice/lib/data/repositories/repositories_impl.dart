@@ -199,9 +199,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  ResultVoid subscribeToNewsletter({required String email}) async {
+  ResultFuture<String> subscribeToNewsletter({required String email}) async {
     try {
       await Future.delayed(const Duration(milliseconds: 500));
+
+      // Generar código promo mock (como haría Supabase)
+      final mockPromoCode =
+          'BIENVENIDO${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
       if (_currentUser != null) {
         _currentUser = UserModel(
@@ -216,7 +220,7 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      return const Right(null);
+      return Right(mockPromoCode);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));
     }
@@ -682,7 +686,10 @@ class OrderRepositoryImpl implements OrderRepository {
   }
 
   @override
-  ResultFuture<OrderEntity> cancelOrder(String orderId) async {
+  ResultFuture<CancellationRequestEntity> requestCancellation(
+    String orderId, {
+    required String reason,
+  }) async {
     try {
       await Future.delayed(const Duration(milliseconds: 500));
 
@@ -691,34 +698,16 @@ class OrderRepositoryImpl implements OrderRepository {
         return const Left(ServerFailure(message: 'Pedido no encontrado'));
       }
 
-      final order = _orders[index];
-      if (!order.canCancel) {
-        return const Left(
-          ValidationFailure(message: 'Este pedido no puede ser cancelado'),
-        );
-      }
-
-      final cancelledOrder = OrderModel(
-        id: order.id,
-        orderNumber: order.orderNumber,
-        userId: order.userId,
-        items: order.items.map((e) => e as OrderItemModel).toList(),
-        subtotal: order.subtotal,
-        discount: order.discount,
-        shippingCost: order.shippingCost,
-        total: order.total,
-        discountCode: order.discountCode,
-        status: OrderStatus.cancelado,
-        shippingAddress: order.shippingAddress,
-        trackingNumber: order.trackingNumber,
-        notes: order.notes,
-        createdAt: order.createdAt,
-        updatedAt: DateTime.now(),
+      final request = CancellationRequestEntity(
+        id: 'mock-cancel-${DateTime.now().millisecondsSinceEpoch}',
+        orderId: orderId,
+        userId: 'mock-user',
+        reason: reason,
+        status: 'pendiente',
+        createdAt: DateTime.now(),
       );
 
-      _orders[index] = cancelledOrder;
-
-      return Right(cancelledOrder);
+      return Right(request);
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));
     }

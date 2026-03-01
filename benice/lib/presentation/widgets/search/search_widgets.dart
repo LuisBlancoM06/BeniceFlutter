@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../../domain/entities/entities.dart';
 
 /// Item del resultado de búsqueda
@@ -233,11 +234,13 @@ class InlineSearchBar extends StatelessWidget {
         onChanged: onChanged,
         onTap: onTap,
         readOnly: readOnly,
+        maxLength: Validators.maxSearch,
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(color: AppTheme.textLight),
           prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
           border: InputBorder.none,
+          counterText: '',
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
       ),

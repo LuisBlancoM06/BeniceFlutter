@@ -208,6 +208,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AdminReturnsScreen(),
       ),
       GoRoute(
+        path: '/admin/cancellations',
+        builder: (context, state) => const AdminCancellationsScreen(),
+      ),
+      GoRoute(
         path: '/admin/invoices',
         builder: (context, state) => const AdminInvoicesScreen(),
       ),

@@ -260,6 +260,9 @@ class SupabaseDataSource {
     String? promoCode,
     double? discountAmount,
     required String shippingAddress,
+    String? shippingName,
+    String? shippingPhone,
+    double? shippingCost,
     String? notes,
   }) async {
     final result = await _client.rpc(
@@ -271,6 +274,10 @@ class SupabaseDataSource {
         'p_promo_code': promoCode,
         'p_discount_amount': discountAmount ?? 0,
         'p_shipping_address': shippingAddress,
+        if (shippingCost != null) 'p_shipping_cost': shippingCost,
+        if (notes != null && notes.isNotEmpty) 'p_notes': notes,
+        if (shippingName != null) 'p_shipping_name': shippingName,
+        if (shippingPhone != null) 'p_shipping_phone': shippingPhone,
       },
     );
     // RPC devuelve UUID directamente como string
@@ -393,6 +400,8 @@ class SupabaseDataSource {
 
   // ==================== DESCUENTOS ====================
 
+  /// Valida código promo (consistente con Astro validate-promo.ts):
+  /// Verifica: activo + no expirado + usos < max_uses
   Future<DiscountCodeModel> validateDiscountCode(String code) async {
     final data = await _client
         .from('promo_codes')
@@ -400,17 +409,70 @@ class SupabaseDataSource {
         .eq('code', code.toUpperCase())
         .eq('active', true)
         .single();
-    return DiscountCodeModel.fromJson(data);
+
+    final model = DiscountCodeModel.fromJson(data);
+
+    // Verificar expiración (como Astro)
+    if (model.expiresAt != null && model.expiresAt!.isBefore(DateTime.now())) {
+      throw Exception('El código ha expirado');
+    }
+
+    // Verificar usos máximos (como Astro)
+    if (model.maxUses != null && model.currentUses >= model.maxUses!) {
+      throw Exception('El código ha alcanzado su límite de usos');
+    }
+
+    return model;
   }
 
   // ==================== NEWSLETTER ====================
 
-  Future<void> subscribeNewsletter(String email, {String? name}) async {
+  /// Genera un código promo único para newsletter (igual que Astro: BIENVENIDO + 6 chars random)
+  String _generatePromoCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = DateTime.now().microsecondsSinceEpoch;
+    var code = AppConstants.newsletterPromoCodePrefix;
+    for (var i = 0; i < 6; i++) {
+      code += chars[((random >> (i * 5)) + i * 7) % chars.length];
+    }
+    return code;
+  }
+
+  /// Suscribe a newsletter y genera código promo único (consistente con Astro)
+  Future<String> subscribeNewsletter(String email, {String? name}) async {
+    // Verificar si ya está suscrito
+    final existing = await _client
+        .from('newsletters')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+    if (existing != null) {
+      throw Exception('Email ya suscrito');
+    }
+
+    final promoCode = _generatePromoCode();
+
+    // Crear código promo en promo_codes (como Astro: 10%, 1 uso, 30 días)
+    await _client.from('promo_codes').insert({
+      'code': promoCode,
+      'discount_percentage': AppConstants.newsletterDiscountPercent,
+      'active': true,
+      'max_uses': AppConstants.newsletterPromoMaxUses,
+      'current_uses': 0,
+      'expires_at': DateTime.now()
+          .add(Duration(days: AppConstants.newsletterPromoDaysValid))
+          .toIso8601String(),
+    });
+
+    // Insertar suscripción con código único
     await _client.from('newsletters').insert({
       'email': email,
-      'promo_code': AppConstants.newsletterPromoCode,
+      'promo_code': promoCode,
       'source': 'app',
     });
+
+    return promoCode;
   }
 
   Future<List<NewsletterSubscriberModel>> getNewsletterSubscribers() async {
@@ -470,6 +532,65 @@ class SupabaseDataSource {
     };
     if (adminNotes != null) updateData['admin_notes'] = adminNotes;
     await _client.from('returns').update(updateData).eq('id', returnId);
+  }
+
+  // ==================== SOLICITUDES DE CANCELACIÓN ====================
+
+  Future<CancellationRequestModel> createCancellationRequest(
+    Map<String, dynamic> data,
+  ) async {
+    final result = await _client
+        .from('cancellation_requests')
+        .insert(data)
+        .select()
+        .single();
+    return CancellationRequestModel.fromJson(result);
+  }
+
+  Future<List<CancellationRequestModel>> getCancellationRequests({
+    String? userId,
+    String? status,
+  }) async {
+    var query = _client.from('cancellation_requests').select();
+    if (userId != null) {
+      query = query.eq('user_id', userId);
+    }
+    if (status != null) {
+      query = query.eq('status', status);
+    }
+    final data = await query.order('created_at', ascending: false).limit(100);
+    return (data as List)
+        .map((e) => CancellationRequestModel.fromJson(e))
+        .toList();
+  }
+
+  Future<void> updateCancellationRequestStatus(
+    String requestId,
+    String status, {
+    String? adminNotes,
+  }) async {
+    final updateData = <String, dynamic>{
+      'status': status,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+    if (adminNotes != null) updateData['admin_notes'] = adminNotes;
+    await _client
+        .from('cancellation_requests')
+        .update(updateData)
+        .eq('id', requestId);
+  }
+
+  Future<List<CancellationRequestModel>> getCancellationRequestsForOrder(
+    String orderId,
+  ) async {
+    final data = await _client
+        .from('cancellation_requests')
+        .select()
+        .eq('order_id', orderId)
+        .order('created_at', ascending: false);
+    return (data as List)
+        .map((e) => CancellationRequestModel.fromJson(e))
+        .toList();
   }
 
   // ==================== DASHBOARD ====================

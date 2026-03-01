@@ -3,7 +3,7 @@ import '../../core/constants/app_constants.dart';
 import '../../domain/entities/entities.dart';
 
 /// Modelo de Usuario para la capa de datos
-/// DB table: users (id, email, full_name, phone, address, role, created_at)
+/// DB table: users (id, email, full_name, phone, address, address_line1, address_line2, city, postal_code, country, stripe_customer_id, role, created_at)
 class UserModel extends UserEntity {
   const UserModel({
     required super.id,
@@ -12,9 +12,13 @@ class UserModel extends UserEntity {
     super.fullName,
     super.phone,
     super.address,
+    super.addressLine1,
+    super.addressLine2,
     super.city,
     super.postalCode,
+    super.country,
     super.avatarUrl,
+    super.stripeCustomerId,
     super.role,
     super.isSubscribedNewsletter,
     required super.createdAt,
@@ -28,9 +32,13 @@ class UserModel extends UserEntity {
       fullName: json['full_name'] as String?,
       phone: json['phone'] as String?,
       address: json['address'] as String?,
+      addressLine1: json['address_line1'] as String?,
+      addressLine2: json['address_line2'] as String?,
       city: json['city'] as String?,
       postalCode: json['postal_code'] as String?,
+      country: json['country'] as String?,
       avatarUrl: json['avatar_url'] as String?,
+      stripeCustomerId: json['stripe_customer_id'] as String?,
       role: json['role'] as String? ?? 'user',
       isSubscribedNewsletter:
           json['is_subscribed_newsletter'] as bool? ?? false,
@@ -47,10 +55,14 @@ class UserModel extends UserEntity {
       'full_name': fullName ?? name,
       'phone': phone,
       'address': address,
+      if (addressLine1 != null) 'address_line1': addressLine1,
+      if (addressLine2 != null) 'address_line2': addressLine2,
       'role': role,
       if (city != null) 'city': city,
       if (postalCode != null) 'postal_code': postalCode,
+      if (country != null) 'country': country,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (stripeCustomerId != null) 'stripe_customer_id': stripeCustomerId,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -63,9 +75,13 @@ class UserModel extends UserEntity {
       fullName: entity.fullName,
       phone: entity.phone,
       address: entity.address,
+      addressLine1: entity.addressLine1,
+      addressLine2: entity.addressLine2,
       city: entity.city,
       postalCode: entity.postalCode,
+      country: entity.country,
       avatarUrl: entity.avatarUrl,
+      stripeCustomerId: entity.stripeCustomerId,
       role: entity.role,
       isSubscribedNewsletter: entity.isSubscribedNewsletter,
       createdAt: entity.createdAt,
@@ -591,6 +607,52 @@ class ReturnModel extends ReturnEntity {
       'status': status,
       'refund_amount': refundAmount,
       'admin_notes': adminNotes,
+    };
+  }
+}
+
+/// Modelo de Solicitud de Cancelación
+/// DB table: cancellation_requests (id, order_id, user_id, reason, status,
+///   admin_notes, stripe_refund_id, created_at, updated_at)
+class CancellationRequestModel extends CancellationRequestEntity {
+  const CancellationRequestModel({
+    required super.id,
+    required super.orderId,
+    required super.userId,
+    required super.reason,
+    super.status,
+    super.adminNotes,
+    super.stripeRefundId,
+    required super.createdAt,
+    super.updatedAt,
+  });
+
+  factory CancellationRequestModel.fromJson(Map<String, dynamic> json) {
+    return CancellationRequestModel(
+      id: json['id'] as String,
+      orderId: json['order_id'] as String,
+      userId: json['user_id'] as String,
+      reason: json['reason'] as String? ?? '',
+      status: json['status'] as String? ?? 'pendiente',
+      adminNotes: json['admin_notes'] as String?,
+      stripeRefundId: json['stripe_refund_id'] as String?,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null
+          ? DateTime.parse(json['updated_at'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'order_id': orderId,
+      'user_id': userId,
+      'reason': reason,
+      'status': status,
+      'admin_notes': adminNotes,
+      'stripe_refund_id': stripeRefundId,
     };
   }
 }

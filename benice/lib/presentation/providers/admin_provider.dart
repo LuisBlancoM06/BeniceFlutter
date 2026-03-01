@@ -339,6 +339,81 @@ class OfertasFlashNotifier extends Notifier<OfertasFlashState> {
   }
 }
 
+// ==================== ADMIN CANCELLATIONS NOTIFIER ====================
+
+class AdminCancellationsState {
+  final List<CancellationRequestEntity> requests;
+  final bool isLoading;
+  final String? error;
+
+  const AdminCancellationsState({
+    this.requests = const [],
+    this.isLoading = false,
+    this.error,
+  });
+}
+
+class AdminCancellationsNotifier extends Notifier<AdminCancellationsState> {
+  @override
+  AdminCancellationsState build() {
+    Future.microtask(() => _load());
+    return const AdminCancellationsState(isLoading: true);
+  }
+
+  Future<void> _load() async {
+    try {
+      final adminRepo = ref.read(adminRepositoryProvider);
+      final result = await adminRepo.getCancellationRequests();
+      result.fold(
+        (failure) => state = AdminCancellationsState(error: failure.message),
+        (requests) => state = AdminCancellationsState(requests: requests),
+      );
+    } catch (e) {
+      state = AdminCancellationsState(error: e.toString());
+    }
+  }
+
+  Future<void> approveCancellation(
+    String requestId,
+    String orderId, {
+    String? notes,
+  }) async {
+    final adminRepo = ref.read(adminRepositoryProvider);
+    final result = await adminRepo.approveCancellation(
+      requestId,
+      orderId,
+      adminNotes: notes,
+    );
+    result.fold(
+      (failure) => state = AdminCancellationsState(
+        requests: state.requests,
+        error: failure.message,
+      ),
+      (_) => _load(),
+    );
+  }
+
+  Future<void> rejectCancellation(String requestId, {String? notes}) async {
+    final adminRepo = ref.read(adminRepositoryProvider);
+    final result = await adminRepo.rejectCancellation(
+      requestId,
+      adminNotes: notes,
+    );
+    result.fold(
+      (failure) => state = AdminCancellationsState(
+        requests: state.requests,
+        error: failure.message,
+      ),
+      (_) => _load(),
+    );
+  }
+
+  Future<void> refresh() async {
+    state = const AdminCancellationsState(isLoading: true);
+    await _load();
+  }
+}
+
 // ==================== PROVIDERS ====================
 
 final adminDashboardProvider =
@@ -375,3 +450,9 @@ final ofertasFlashProvider =
     NotifierProvider.autoDispose<OfertasFlashNotifier, OfertasFlashState>(
       OfertasFlashNotifier.new,
     );
+
+final adminCancellationsProvider =
+    NotifierProvider.autoDispose<
+      AdminCancellationsNotifier,
+      AdminCancellationsState
+    >(AdminCancellationsNotifier.new);

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../providers/providers.dart';
 import '../../widgets/common/common_widgets.dart';
 
@@ -183,14 +184,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     value: isSubscribed,
                     onChanged: (value) async {
                       if (value) {
-                        final success = await ref
+                        final promoCode = await ref
                             .read(authProvider.notifier)
                             .subscribeToNewsletter(email: user.email);
                         if (context.mounted) {
                           CustomSnackBar.showSuccess(
                             context,
-                            success
-                                ? 'Suscrito a la newsletter'
+                            promoCode != null
+                                ? 'Suscrito a la newsletter. Tu código: $promoCode'
                                 : 'Error al suscribirse',
                           );
                         }
@@ -305,7 +306,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Nombre de usuario',
                     prefixIcon: Icon(Icons.person_outline),
+                    counterText: '',
                   ),
+                  maxLength: Validators.maxName,
+                  inputFormatters: [Validators.lettersAndSpaces()],
+                  textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -313,7 +318,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Nombre completo',
                     prefixIcon: Icon(Icons.badge_outlined),
+                    counterText: '',
                   ),
+                  maxLength: Validators.maxFullName,
+                  inputFormatters: [Validators.lettersAndSpaces()],
+                  textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -321,8 +330,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Teléfono',
                     prefixIcon: Icon(Icons.phone_outlined),
+                    counterText: '',
                   ),
                   keyboardType: TextInputType.phone,
+                  maxLength: Validators.maxPhone,
+                  inputFormatters: [Validators.phoneChars()],
                 ),
               ],
             ),
@@ -421,8 +433,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     labelText: 'Dirección *',
                     prefixIcon: Icon(Icons.location_on_outlined),
                     hintText: 'Calle, número, piso...',
+                    counterText: '',
                   ),
                   maxLines: 2,
+                  maxLength: Validators.maxAddress,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -430,7 +444,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Ciudad *',
                     prefixIcon: Icon(Icons.location_city),
+                    counterText: '',
                   ),
+                  maxLength: Validators.maxCity,
+                  inputFormatters: [Validators.lettersAndSpaces()],
+                  textCapitalization: TextCapitalization.words,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -438,8 +456,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Código Postal *',
                     prefixIcon: Icon(Icons.pin_drop),
+                    counterText: '',
                   ),
                   keyboardType: TextInputType.number,
+                  maxLength: Validators.maxPostalCode,
+                  inputFormatters: [Validators.digitsOnly()],
                 ),
               ],
             ),
@@ -460,6 +481,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           context,
                           'Completa todos los campos',
                         );
+                        return;
+                      }
+                      final cpError = Validators.postalCode(
+                        postalCodeController.text,
+                      );
+                      if (cpError != null) {
+                        CustomSnackBar.showError(context, cpError);
+                        return;
+                      }
+                      final cityError = Validators.city(cityController.text);
+                      if (cityError != null) {
+                        CustomSnackBar.showError(context, cityError);
                         return;
                       }
                       setDialogState(() => isSaving = true);
@@ -532,28 +565,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 TextField(
                   controller: currentPassCtrl,
                   obscureText: true,
+                  maxLength: Validators.maxPassword,
                   decoration: const InputDecoration(
                     labelText: 'Contraseña actual',
                     prefixIcon: Icon(Icons.lock_outline),
+                    counterText: '',
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: newPassCtrl,
                   obscureText: true,
+                  maxLength: Validators.maxPassword,
                   decoration: const InputDecoration(
                     labelText: 'Nueva contraseña',
                     prefixIcon: Icon(Icons.lock_outline),
                     helperText: 'Mínimo 6 caracteres',
+                    counterText: '',
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: confirmPassCtrl,
                   obscureText: true,
+                  maxLength: Validators.maxPassword,
                   decoration: const InputDecoration(
                     labelText: 'Confirmar nueva contraseña',
                     prefixIcon: Icon(Icons.lock_outline),
+                    counterText: '',
                   ),
                 ),
               ],
@@ -576,18 +615,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         );
                         return;
                       }
-                      if (newPassCtrl.text.length < 6) {
-                        CustomSnackBar.showError(
-                          context,
-                          'La contraseña debe tener al menos 6 caracteres',
-                        );
+                      final passError = Validators.password(newPassCtrl.text);
+                      if (passError != null) {
+                        CustomSnackBar.showError(context, passError);
                         return;
                       }
-                      if (newPassCtrl.text != confirmPassCtrl.text) {
-                        CustomSnackBar.showError(
-                          context,
-                          'Las contraseñas no coinciden',
-                        );
+                      final confirmError = Validators.passwordConfirm(
+                        confirmPassCtrl.text,
+                        newPassCtrl.text,
+                      );
+                      if (confirmError != null) {
+                        CustomSnackBar.showError(context, confirmError);
                         return;
                       }
                       setDialogState(() => isSaving = true);

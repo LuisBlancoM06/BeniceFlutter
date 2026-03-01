@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/validators.dart';
 import '../../providers/providers.dart';
 
 class AdminSettingsScreen extends ConsumerStatefulWidget {
@@ -482,9 +483,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             TextField(
               controller: codeController,
               textCapitalization: TextCapitalization.characters,
+              maxLength: Validators.maxPromoCode,
+              inputFormatters: [Validators.alphanumericCode()],
               decoration: InputDecoration(
                 labelText: 'Código',
                 hintText: 'Ej. VERANO20',
+                counterText: '',
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 border: OutlineInputBorder(
@@ -508,9 +512,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             TextField(
               controller: percentController,
               keyboardType: TextInputType.number,
+              maxLength: 3,
+              inputFormatters: [Validators.digitsOnly()],
               decoration: InputDecoration(
                 labelText: '% Descuento',
                 hintText: 'Ej. 15',
+                counterText: '',
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 border: OutlineInputBorder(
@@ -548,13 +555,27 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
             ),
             onPressed: () {
               final code = codeController.text.trim();
-              final percent = double.tryParse(percentController.text) ?? 0;
-              if (code.isNotEmpty && percent > 0) {
-                ref
-                    .read(adminPromoCodesProvider.notifier)
-                    .createCode(code, percent);
-                Navigator.pop(ctx);
+              final codeError = Validators.promoCode(code);
+              if (codeError != null) {
+                ScaffoldMessenger.of(
+                  ctx,
+                ).showSnackBar(SnackBar(content: Text(codeError)));
+                return;
               }
+              final percentError = Validators.discountPercent(
+                percentController.text.trim(),
+              );
+              if (percentError != null) {
+                ScaffoldMessenger.of(
+                  ctx,
+                ).showSnackBar(SnackBar(content: Text(percentError)));
+                return;
+              }
+              final percent = double.tryParse(percentController.text) ?? 0;
+              ref
+                  .read(adminPromoCodesProvider.notifier)
+                  .createCode(code, percent);
+              Navigator.pop(ctx);
             },
             child: const Text('Crear Código'),
           ),
