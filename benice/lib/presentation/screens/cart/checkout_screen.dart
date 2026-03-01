@@ -30,7 +30,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _cardNumberController = TextEditingController();
   final _cardExpiryController = TextEditingController();
   final _cardCvcController = TextEditingController();
-  final _cardHolderController = TextEditingController();
+
   bool _isProcessing = false;
   int _currentStep = 0;
   bool _hasInitializedFromUser = false;
@@ -48,7 +48,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     _cardNumberController.dispose();
     _cardExpiryController.dispose();
     _cardCvcController.dispose();
-    _cardHolderController.dispose();
+
     super.dispose();
   }
 
@@ -457,40 +457,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              // Card holder name
-              TextFormField(
-                controller: _cardHolderController,
-                textCapitalization: TextCapitalization.characters,
-                decoration: InputDecoration(
-                  labelText: 'Titular de la tarjeta',
-                  hintText: 'NOMBRE APELLIDOS',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppTheme.borderRadiusMd,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppTheme.borderRadiusMd,
-                    ),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppTheme.borderRadiusMd,
-                    ),
-                    borderSide: const BorderSide(
-                      color: Color(0xFF635BFF),
-                      width: 2,
-                    ),
-                  ),
-                ),
-                validator: (v) => v == null || v.trim().isEmpty
-                    ? 'Introduce el titular'
-                    : null,
-              ),
-              const SizedBox(height: 16),
               // Card number
               TextFormField(
                 controller: _cardNumberController,
