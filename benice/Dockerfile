@@ -1,19 +1,16 @@
 # Stage 1: Build Flutter Web
 FROM ghcr.io/cirruslabs/flutter:3.35.6 AS build
 
-# Build arguments (set these in Coolify > Build Variables)
-ARG SUPABASE_URL
-ARG SUPABASE_ANON_KEY
+# Build arguments - names must match Coolify environment variables
+ARG PUBLIC_SUPABASE_URL=""
+ARG PUBLIC_SUPABASE_ANON_KEY=""
 ARG SUPABASE_SERVICE_ROLE_KEY=""
 ARG STRIPE_SECRET_KEY=""
 ARG STRIPE_PUBLISHABLE_KEY=""
 ARG STRIPE_WEBHOOK_SECRET=""
 ARG RESEND_API_KEY=""
-ARG FROM_EMAIL="ventas@beniceflutter.com"
-ARG PUBLIC_SITE_URL="https://victoriafp.online"
-ARG CLOUDINARY_CLOUD_NAME=""
-ARG CLOUDINARY_API_KEY=""
-ARG CLOUDINARY_API_SECRET=""
+ARG FROM_EMAIL="onboarding@resend.dev"
+ARG PUBLIC_SITE_URL="https://benicetiendanimal.victoriafp.online"
 ARG GOOGLE_PLACES_API_KEY=""
 
 WORKDIR /app
@@ -28,8 +25,9 @@ RUN flutter pub get
 COPY . .
 
 # Generate .env file from build arguments
-RUN echo "SUPABASE_URL=${SUPABASE_URL}" > .env \
-    && echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> .env \
+# Note: app_constants.dart reads SUPABASE_URL / SUPABASE_ANON_KEY (without PUBLIC_ prefix)
+RUN echo "SUPABASE_URL=${PUBLIC_SUPABASE_URL}" > .env \
+    && echo "SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}" >> .env \
     && echo "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}" >> .env \
     && echo "STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}" >> .env \
     && echo "STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}" >> .env \
@@ -37,9 +35,6 @@ RUN echo "SUPABASE_URL=${SUPABASE_URL}" > .env \
     && echo "RESEND_API_KEY=${RESEND_API_KEY}" >> .env \
     && echo "FROM_EMAIL=${FROM_EMAIL}" >> .env \
     && echo "PUBLIC_SITE_URL=${PUBLIC_SITE_URL}" >> .env \
-    && echo "CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}" >> .env \
-    && echo "CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}" >> .env \
-    && echo "CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}" >> .env \
     && echo "GOOGLE_PLACES_API_KEY=${GOOGLE_PLACES_API_KEY}" >> .env
 
 # Build Flutter web (release)
