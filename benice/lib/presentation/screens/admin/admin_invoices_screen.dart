@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
@@ -346,6 +347,53 @@ class _InvoiceTile extends StatelessWidget {
 
   const _InvoiceTile({required this.invoice});
 
+  Future<void> _openPdf(BuildContext context) async {
+    final url = invoice.pdfUrl;
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Text('PDF no disponible para esta factura'),
+            ],
+          ),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('No se pudo abrir el PDF'),
+              ],
+            ),
+            backgroundColor: const Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAbono = invoice.invoiceType == 'abono';
@@ -356,6 +404,7 @@ class _InvoiceTile extends StatelessWidget {
         ? Icons.remove_circle_rounded
         : Icons.receipt_rounded;
     final typeBg = isAbono ? const Color(0xFFFEE2E2) : const Color(0xFFD1FAE5);
+    final hasPdf = invoice.pdfUrl != null && invoice.pdfUrl!.isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -430,6 +479,45 @@ class _InvoiceTile extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppTheme.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: () => _openPdf(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: hasPdf
+                          ? const Color(0xFFEDE9FE)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.picture_as_pdf_rounded,
+                          size: 14,
+                          color: hasPdf
+                              ? const Color(0xFF7C3AED)
+                              : const Color(0xFF94A3B8),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ver PDF',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: hasPdf
+                                ? const Color(0xFF7C3AED)
+                                : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
