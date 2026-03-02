@@ -188,12 +188,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             .read(authProvider.notifier)
                             .subscribeToNewsletter(email: user.email);
                         if (context.mounted) {
-                          CustomSnackBar.showSuccess(
-                            context,
-                            promoCode != null
-                                ? 'Suscrito a la newsletter. Tu código: $promoCode'
-                                : 'Error al suscribirse',
-                          );
+                          if (promoCode != null) {
+                            // Refrescar datos del usuario para que el toggle se actualice
+                            await ref.read(authProvider.notifier).refreshUser();
+                            if (context.mounted) {
+                              CustomSnackBar.showSuccess(
+                                context,
+                                'Suscrito a la newsletter. Tu código: $promoCode',
+                              );
+                            }
+                          } else {
+                            CustomSnackBar.showError(
+                              context,
+                              'Error al suscribirse. Inténtalo de nuevo.',
+                            );
+                          }
                         }
                       } else {
                         if (context.mounted) {

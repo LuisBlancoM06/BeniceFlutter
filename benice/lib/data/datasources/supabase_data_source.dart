@@ -274,10 +274,10 @@ class SupabaseDataSource {
         'p_promo_code': promoCode,
         'p_discount_amount': discountAmount ?? 0,
         'p_shipping_address': shippingAddress,
-        if (shippingCost != null) 'p_shipping_cost': shippingCost,
+        'p_shipping_cost': ?shippingCost,
         if (notes != null && notes.isNotEmpty) 'p_notes': notes,
-        if (shippingName != null) 'p_shipping_name': shippingName,
-        if (shippingPhone != null) 'p_shipping_phone': shippingPhone,
+        'p_shipping_name': ?shippingName,
+        'p_shipping_phone': ?shippingPhone,
       },
     );
     // RPC devuelve UUID directamente como string
@@ -443,12 +443,20 @@ class SupabaseDataSource {
     // Verificar si ya está suscrito
     final existing = await _client
         .from('newsletters')
-        .select('id')
+        .select('id, promo_code')
         .eq('email', email)
         .maybeSingle();
 
     if (existing != null) {
-      throw Exception('Email ya suscrito');
+      // Ya suscrito: marcar en users y devolver el código existente
+      final userId = _client.auth.currentUser?.id;
+      if (userId != null) {
+        await _client
+            .from('users')
+            .update({'is_subscribed_newsletter': true})
+            .eq('id', userId);
+      }
+      return (existing['promo_code'] as String?) ?? 'YA_SUSCRITO';
     }
 
     final promoCode = _generatePromoCode();
@@ -471,6 +479,15 @@ class SupabaseDataSource {
       'promo_code': promoCode,
       'source': 'app',
     });
+
+    // Marcar usuario como suscrito en la tabla users
+    final userId = _client.auth.currentUser?.id;
+    if (userId != null) {
+      await _client
+          .from('users')
+          .update({'is_subscribed_newsletter': true})
+          .eq('id', userId);
+    }
 
     return promoCode;
   }
@@ -615,7 +632,11 @@ class SupabaseDataSource {
     final allProducts = productsData as List;
     final totalProducts = allProducts.length;
     final lowStockProducts = allProducts
-        .where((p) => (p['stock'] as num?) != null && (p['stock'] as num) <= 5)
+        .where(
+          (p) =>
+              (p['stock'] as num?) != null &&
+              (p['stock'] as num) < AppConstants.lowStockThreshold,
+        )
         .length;
 
     // 3. Users count

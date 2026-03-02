@@ -432,9 +432,10 @@ class OrderDetailScreen extends ConsumerWidget {
             icon: Icons.cancel_outlined,
             backgroundColor: AppTheme.errorColor,
             onPressed: () {
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               showDialog(
                 context: context,
-                builder: (context) => CancelOrderDialog(
+                builder: (_) => CancelOrderDialog(
                   orderNumber: order.orderNumber,
                   onConfirm: (reason) async {
                     final result = await ref
@@ -442,12 +443,49 @@ class OrderDetailScreen extends ConsumerWidget {
                         .requestCancellation(order.id, reason: reason);
                     result.fold(
                       (failure) {
-                        CustomSnackBar.showError(context, failure.message);
+                        scaffoldMessenger.hideCurrentSnackBar();
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(child: Text(failure.message)),
+                              ],
+                            ),
+                            backgroundColor: AppTheme.errorColor,
+                            behavior: SnackBarBehavior.floating,
+                            margin: const EdgeInsets.all(16),
+                          ),
+                        );
                       },
                       (_) {
-                        CustomSnackBar.showSuccess(
-                          context,
-                          'Solicitud de cancelación enviada. El equipo la revisará pronto.',
+                        scaffoldMessenger.hideCurrentSnackBar();
+                        scaffoldMessenger.showSnackBar(
+                          const SnackBar(
+                            content: Row(
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Solicitud de cancelación enviada. El equipo la revisará pronto.',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: AppTheme.successColor,
+                            behavior: SnackBarBehavior.floating,
+                            margin: EdgeInsets.all(16),
+                          ),
                         );
                         ref.invalidate(orderDetailProvider(orderId));
                       },
@@ -470,13 +508,13 @@ class OrderDetailScreen extends ConsumerWidget {
                 shape: const RoundedRectangleBorder(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                builder: (context) => ReturnInfoBottomSheet(
+                builder: (sheetContext) => ReturnInfoBottomSheet(
                   orderNumber: order.orderNumber,
                   onConfirm: (reason) {
                     ref
                         .read(orderProvider.notifier)
                         .requestReturn(order.id, reason: reason);
-                    Navigator.pop(context);
+                    Navigator.pop(sheetContext);
                     CustomSnackBar.showSuccess(
                       context,
                       'Solicitud de devolución enviada',
@@ -544,12 +582,12 @@ class _OrderTimeline extends StatelessWidget {
                       color: order.status.color,
                     ),
                   ),
-                  if (order.cancelledAt != null)
+                  if (order.updatedAt != null)
                     Text(
                       DateFormat(
                         'd MMM yyyy, HH:mm',
                         'es',
-                      ).format(order.cancelledAt),
+                      ).format(order.updatedAt!),
                       style: const TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 12,
